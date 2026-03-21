@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <!-- 
+    ============================================================
+    META & JUDUL HALAMAN
+    ============================================================
+    <meta charset="UTF-8">  → Mengatur encoding karakter agar 
+                              huruf Indonesia (á, é, dll) tampil benar
+    <meta name="viewport">  → Membuat tampilan responsif di HP
+    <title>               → Judul yang muncul di tab browser
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💰 Dompetku — Kelola Keuangan</title>
+
+  <!-- 
+    ============================================================
+    GOOGLE FONTS
+    ============================================================
+    Mengambil font dari internet (Google Fonts).
+    "Playfair Display" → font judul bergaya elegan
+    "DM Sans"          → font teks biasa yang bersih & modern
+  -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* 
+      ============================================================
+      CSS VARIABLES (Variabel Warna & Ukuran)
+      ============================================================
+      Variabel CSS ditulis dengan awalan "--" di dalam :root {}.
+      :root berarti "berlaku untuk seluruh halaman".
+      Tujuannya: kalau mau ganti warna, cukup ubah di sini saja,
+      tidak perlu cari satu per satu di seluruh kode.
+
+      Contoh penggunaan: color: var(--gold);
+    */
+    :root {
+      --bg:linear-gradient(120deg, #0f2027, #042531, #092d3c);   /* Warna latar belakang utama (hitam pekat) */
+      --surface:   #16161a;   /* Warna kartu/kotak (abu gelap) */
+      --surface2:  #1e1e24;   /* Warna permukaan kedua (sedikit lebih terang) */
+      --border:    #2a2a35;   /* Warna garis tepi/border */
+      --gold:      #c9a84c;   /* Warna emas untuk aksen utama */
+      --gold-lite: #e8c96e;   /* Warna emas lebih terang */
+      --green:     #3ecf74;   /* Warna hijau untuk pemasukan */
+      --red:       #f16060;   /* Warna merah untuk pengeluaran */
+      --text:      #f0ede8;   /* Warna teks utama (putih hangat) */
+      --muted:     #7a7880;   /* Warna teks redup/keterangan */
+      --radius:    14px;      /* Sudut membulat pada kotak */
+    }
+
+    /* 
+      ============================================================
+      RESET & BASE STYLE
+      ============================================================
+      * { margin:0; padding:0 } → Hapus semua jarak bawaan browser
+      box-sizing: border-box   → Ukuran kotak sudah termasuk padding & border
+      font-family              → Font default seluruh halaman
+    */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;          /* Tinggi minimal = tinggi layar penuh */
+      padding: 24px 16px 60px;    /* Jarak dalam: atas kanan bawah kiri */
+    }
+
+    /* 
+      ============================================================
+      ANIMASI FADE-IN
+      ============================================================
+      @keyframes mendefinisikan nama animasi dan tahapan gerakannya.
+      from → keadaan awal animasi
+      to   → keadaan akhir animasi
+      
+      animation-fill-mode: both → pertahankan keadaan akhir animasi
+    */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 
+      ============================================================
+      LAYOUT UTAMA
+      ============================================================
+      max-width: 780px  → Lebar maksimal konten
+      margin: 0 auto    → Tengahkan secara horizontal
+    */
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      animation: fadeUp 0.5s ease both; /* Animasi muncul dari bawah */
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+      padding-top: 20px;
+    }
+
+    /* 
+      Dekoratif garis emas di atas judul.
+      ::before adalah "elemen semu" yang dibuat murni lewat CSS,
+      tidak ada di HTML. Berguna untuk dekorasi tanpa menambah tag.
+    */
+    header::before {
+      content: '';                        /* Wajib ada agar elemen muncul */
+      display: block;
+      width: 50px;
+      height: 3px;
+      background: var(--gold);
+      margin: 0 auto 18px;
+      border-radius: 2px;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 3rem); /* clamp: ukuran min, responsif, max */
+      color: var(--gold-lite);
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* 
+      ============================================================
+      KARTU SALDO (RINGKASAN)
+      ============================================================
+      display: grid        → Tata letak kotak (grid system)
+      grid-template-columns→ Tentukan jumlah & lebar kolom
+      repeat(3, 1fr)       → 3 kolom dengan lebar sama rata (1 fraction)
+      gap                  → Jarak antar kotak dalam grid
+    */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      text-align: center;
+      position: relative;      /* Agar elemen anak bisa diposisikan relatif */
+      overflow: hidden;        /* Sembunyikan bagian yang melewati batas */
+      transition: transform 0.2s; /* Animasi saat hover */
+    }
+
+    /* Menggeser kartu ke atas sedikit saat mouse di atasnya */
+    .summary-card:hover { transform: translateY(-3px); }
+
+    /* Garis warna di bagian atas tiap kartu */
+    .summary-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    /* Setiap kartu punya warna garis berbeda */
+    .summary-card.balance::after  { background: var(--gold); }
+    .summary-card.income::after   { background: var(--green); }
+    .summary-card.expense::after  { background: var(--red); }
+
+    .summary-card .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;  /* Huruf kapital semua */
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .summary-card .amount {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      font-weight: 700;
+    }
+
+    .amount.green { color: var(--green); }
+    .amount.red   { color: var(--red); }
+    .amount.gold  { color: var(--gold-lite); }
+
+    /* 
+      ============================================================
+      PANEL 2 KOLOM (FORM + RIWAYAT)
+      ============================================================
+      Di layar besar: form kiri, riwayat kanan (2 kolom)
+      Di layar kecil: susun ke bawah (1 kolom) via @media
+    */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 20px;
+      align-items: start; /* Sejajarkan ke bagian atas */
+    }
+
+    /* ---- KOTAK/PANEL UMUM ---- */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .panel-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--gold-lite);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border); /* Garis pemisah */
+    }
+
+    /* 
+      ============================================================
+      FORM INPUT
+      ============================================================
+      label  → Teks keterangan di atas input
+      input  → Kotak isian teks/angka
+      select → Kotak pilihan dropdown
+    */
+    .form-group {
+      margin-bottom: 16px; /* Jarak antar field */
+    }
+
+    .form-group label {
+      display: block;       /* Agar label ada di baris sendiri */
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    /* Satu style untuk input text, number, dan select */
+    .form-group input,
+    .form-group select {
+      width: 100%;          /* Lebar penuh */
+      padding: 11px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;        /* Hapus outline bawaan browser */
+      transition: border-color 0.2s; /* Animasi saat fokus */
+    }
+
+    /* Saat input diklik/fokus, ganti warna border */
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--gold);
+    }
+
+    /* Warna teks placeholder (teks abu sebelum diisi) */
+    .form-group input::placeholder { color: var(--muted); }
+
+    /* Warna background option dalam select */
+    .form-group select option { background: var(--surface2); }
+
+    /* 
+      ============================================================
+      TOMBOL (BUTTON)
+      ============================================================
+      cursor: pointer → Ubah kursor jadi tangan saat hover
+      border: none    → Hapus border bawaan button
+      transition      → Animasi perubahan style
+    */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    /* Tombol utama dengan warna emas */
+    .btn-primary {
+      background: var(--gold);
+      color: #111;
+    }
+    .btn-primary:hover {
+      background: var(--gold-lite);
+      transform: translateY(-1px);  /* Naik sedikit saat hover */
+    }
+
+    /* 
+      ============================================================
+      DAFTAR TRANSAKSI
+      ============================================================
+    */
+    #transaction-list {
+      display: flex;
+      flex-direction: column; /* Susun item ke bawah */
+      gap: 10px;
+    }
+
+    /* Satu baris transaksi */
+    .tx-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      background: var(--surface2);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      animation: fadeUp 0.3s ease both; /* Animasi saat item baru ditambah */
+      transition: opacity 0.2s;
+    }
+
+    /* Lingkaran emoji di kiri */
+    .tx-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%; /* 50% = bentuk lingkaran */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0; /* Jangan mengecil meski ruang sempit */
+    }
+
+    .tx-icon.income  { background: rgba(62,207,116,0.15); }
+    .tx-icon.expense { background: rgba(241,96,96,0.15); }
+
+    /* Teks keterangan dan tanggal */
+    .tx-info { flex: 1; min-width: 0; } /* flex:1 = isi sisa ruang */
+
+    .tx-info .tx-desc {
+      font-size: 0.88rem;
+      font-weight: 500;
+      white-space: nowrap;    /* Jangan wrap ke baris baru */
+      overflow: hidden;       /* Sembunyikan jika terlalu panjang */
+      text-overflow: ellipsis;/* Tampilkan "..." kalau terpotong */
+    }
+
+    .tx-info .tx-cat {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Jumlah uang di kanan */
+    .tx-amount {
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .tx-amount.income  { color: var(--green); }
+    .tx-amount.expense { color: var(--red); }
+
+    /* Tombol hapus (×) */
+    .tx-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .tx-del:hover { color: var(--red); background: rgba(241,96,96,0.1); }
+
+    /* Pesan kosong saat belum ada transaksi */
+    .empty-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 30px 0;
+    }
+
+    /* 
+      ============================================================
+      FILTER KATEGORI
+      ============================================================
+      Tombol-tombol kecil untuk filter tampilan transaksi
+    */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap; /* Pindah baris jika layar sempit */
+      margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 20px; /* Sudut sangat membulat = bentuk pil */
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    /* Filter yang sedang aktif */
+    .filter-btn.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #111;
+      font-weight: 600;
+    }
+
+    /* 
+      ============================================================
+      GRAFIK BATANG SEDERHANA
+      ============================================================
+    */
+    .chart-section {
+      margin-top: 20px;
+    }
+
+    .chart-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chart-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+    }
+
+    .chart-label { width: 80px; color: var(--muted); flex-shrink: 0; }
+
+    .chart-track {
+      flex: 1;
+      height: 10px;
+      background: var(--surface2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    /* Batang yang terisi (lebar ditentukan lewat JavaScript) */
+    .chart-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.6s ease; /* Animasi batang tumbuh */
+    }
+
+    .chart-fill.income  { background: var(--green); }
+    .chart-fill.expense { background: var(--red); }
+
+    .chart-val { width: 70px; text-align: right; font-weight: 500; }
+
+    /* 
+      ============================================================
+      NOTIFIKASI (TOAST)
+      ============================================================
+      position: fixed → Menempel di posisi tetap meski di-scroll
+      z-index: 1000   → Tampil di atas semua elemen lain
+      transform: translateX(-50%) → Tengahkan secara horizontal
+    */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface2);
+      border: 1px solid var(--gold);
+      color: var(--text);
+      padding: 12px 22px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      opacity: 0;
+      pointer-events: none; /* Tidak bisa diklik saat tidak terlihat */
+      transition: opacity 0.3s;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; }
+
+    /* 
+      ============================================================
+      RESPONSIVE — LAYAR KECIL (HP)
+      ============================================================
+      @media (max-width: 600px) → Aturan ini HANYA berlaku jika
+      lebar layar <= 600px (biasanya ukuran HP).
+      Ini disebut "media query" — inti dari desain responsif.
+    */
+    @media (max-width: 600px) {
+      /* Ubah dari 3 kolom menjadi 1 kolom di HP */
+      .summary-grid { grid-template-columns: 1fr; gap: 10px; }
+      /* Ubah dari 2 kolom menjadi 1 kolom */
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- ===== HEADER ===== -->
+    <header>
+      <h1>Dompetku</h1>
+      <p>Catat, pantau, dan kelola keuanganmu dengan bijak</p>
+    </header>
+
+    <!-- ===== KARTU RINGKASAN SALDO ===== -->
+    <!-- 
+      Tiga kartu: Saldo, Pemasukan, Pengeluaran
+      id="..." digunakan JavaScript untuk menemukan elemen ini
+      dan mengubah isinya (updateSummary)
+    -->
+    <div class="summary-grid">
+      <div class="summary-card balance">
+        <div class="label">💼 Saldo</div>
+        <div class="amount gold" id="total-balance">Rp 0</div>
+      </div>
+      <div class="summary-card income">
+        <div class="label">📈 Pemasukan</div>
+        <div class="amount green" id="total-income">Rp 0</div>
+      </div>
+      <div class="summary-card expense">
+        <div class="label">📉 Pengeluaran</div>
+        <div class="amount red" id="total-expense">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- ===== AREA UTAMA: FORM + RIWAYAT ===== -->
+    <div class="two-col">
+
+      <!-- KOLOM KIRI: FORM TAMBAH TRANSAKSI -->
+      <div class="panel">
+        <div class="panel-title">＋ Tambah Transaksi</div>
+
+        <!-- 
+          Setiap <div class="form-group"> berisi 1 field input.
+          <label for="xxx"> harus sama dengan <input id="xxx">
+          agar label bisa diklik untuk fokus ke inputnya.
+        -->
+
+        <!-- Pilihan Tipe: Pemasukan / Pengeluaran -->
+        <div class="form-group">
+          <label for="type">Tipe</label>
+          <select id="type">
+            <option value="income">📈 Pemasukan</option>
+            <option value="expense">📉 Pengeluaran</option>
+          </select>
+        </div>
+
+        <!-- Input Keterangan/Deskripsi -->
+        <div class="form-group">
+          <label for="desc">Keterangan</label>
+          <input type="text" id="desc" placeholder="Contoh: Gaji bulan ini">
+        </div>
+
+        <!-- Input Jumlah (angka) -->
+        <div class="form-group">
+          <label for="amount">Jumlah (Rp)</label>
+          <input type="number" id="amount" placeholder="0" min="1">
+        </div>
+
+        <!-- Pilihan Kategori (isi otomatis via JS saat tipe berubah) -->
+        <div class="form-group">
+          <label for="category">Kategori</label>
+          <select id="category"></select>
+        </div>
+
+        <!-- Input Tanggal -->
+        <div class="form-group">
+          <label for="date">Tanggal</label>
+          <input type="date" id="date">
+        </div>
+
+        <!-- Tombol Simpan — onclick memanggil fungsi addTransaction() -->
+        <button class="btn btn-primary" onclick="addTransaction()">
+          Simpan Transaksi
+        </button>
+      </div>
+
+      <!-- KOLOM KANAN: RIWAYAT TRANSAKSI -->
+      <div class="panel">
+        <div class="panel-title">📋 Riwayat Transaksi</div>
+
+        <!-- Tombol Filter -->
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="setFilter('semua', this)">Semua</button>
+          <button class="filter-btn" onclick="setFilter('income', this)">Pemasukan</button>
+          <button class="filter-btn" onclick="setFilter('expense', this)">Pengeluaran</button>
+        </div>
+
+        <!-- List transaksi diisi oleh JavaScript -->
+        <div id="transaction-list">
+          <div class="empty-msg">Belum ada transaksi. Yuk mulai catat! 🌱</div>
+        </div>
+
+        <!-- Grafik per Kategori -->
+        <div class="chart-section" id="chart-section" style="display:none">
+          <div class="panel-title" style="margin-top:20px">📊 Grafik Kategori</div>
+          <div class="chart-bar-wrap" id="chart-bars"></div>
+        </div>
+      </div>
+
+    </div><!-- /two-col -->
+  </div><!-- /container -->
+
+  <!-- Notifikasi toast -->
+  <div class="toast" id="toast"></div>
+
+
+  <!-- 
+    ============================================================
+    JAVASCRIPT — LOGIKA APLIKASI
+    ============================================================
+    Semua kode JS ditulis di dalam tag <script>.
+    JS adalah "otak" aplikasi: memproses data, 
+    mengubah tampilan, merespons klik pengguna.
+  -->
+  <script>
+
+    /* 
+      ============================================================
+      DATA & KONSTANTA
+      ============================================================
+      const → variabel yang nilainya tidak bisa diganti (immutable)
+      let   → variabel biasa yang bisa diganti nilainya
+      []    → array (daftar/list)
+      {}    → object (kumpulan properti: nilai)
+    */
+
+    // Daftar kategori berdasarkan tipe transaksi
+    const CATEGORIES = {
+      income:  ['💼 Gaji', '💡 Bonus', '🏪 Usaha', '📦 Investasi', '🎁 Lainnya'],
+      expense: ['🍜 Makanan', '🚗 Transport', '🏠 Tagihan', '🎮 Hiburan', '🛍 Belanja', '💊 Kesehatan', '📚 Pendidikan', '💸 Lainnya']
+    };
+
+    // Array untuk menyimpan semua transaksi
+    // localStorage adalah "memori" browser yang tersimpan walau halaman di-refresh
+    let transactions = JSON.parse(localStorage.getItem('dompetku') || '[]');
+    /*
+      JSON.parse()       → Ubah teks JSON jadi object JavaScript
+      localStorage.getItem('dompetku') → Ambil data tersimpan
+      || '[]'            → Jika tidak ada data, gunakan array kosong
+    */
+
+    let activeFilter = 'semua'; // Filter aktif saat ini
+
+    /* 
+      ============================================================
+      FUNGSI: formatRupiah
+      ============================================================
+      Fungsi = blok kode yang bisa dipanggil berulang kali.
+      Parameter: angka (misalnya 150000)
+      Return: string teks (misalnya "Rp 150.000")
+      
+      Intl.NumberFormat → API bawaan browser untuk format angka
+      locale 'id-ID'    → format Indonesia (titik sebagai pemisah ribuan)
+    */
+    function formatRupiah(angka) {
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: simpanData
+      ============================================================
+      Menyimpan array transactions ke localStorage.
+      JSON.stringify() → Ubah object/array JavaScript jadi teks JSON
+      agar bisa disimpan di localStorage (hanya terima teks).
+    */
+    function simpanData() {
+      localStorage.setItem('dompetku', JSON.stringify(transactions));
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: updateCategories
+      ============================================================
+      Isi ulang dropdown kategori berdasarkan tipe yang dipilih.
+      Dipanggil setiap kali dropdown "Tipe" berubah.
+    */
+    function updateCategories() {
+      const type = document.getElementById('type').value;
+      // document.getElementById() → Cari elemen HTML berdasarkan id-nya
+      
+      const catEl = document.getElementById('category');
+      catEl.innerHTML = ''; // Kosongkan isi dropdown dulu
+      
+      // Loop setiap kategori dan buat <option> baru
+      // forEach → iterasi setiap item dalam array
+      CATEGORIES[type].forEach(cat => {
+        const opt = document.createElement('option'); // Buat elemen baru
+        opt.value = cat;
+        opt.textContent = cat;
+        catEl.appendChild(opt); // Tambahkan ke dropdown
+      });
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: addTransaction
+      ============================================================
+      Dipanggil saat tombol "Simpan Transaksi" diklik.
+      Membaca nilai input, validasi, lalu simpan ke array.
+    */
+    function addTransaction() {
+      // Ambil nilai dari setiap field input
+      const type   = document.getElementById('type').value;
+      const desc   = document.getElementById('desc').value.trim(); // .trim() hapus spasi di tepi
+      const amount = parseFloat(document.getElementById('amount').value); // parseFloat → ubah string ke angka desimal
+      const cat    = document.getElementById('category').value;
+      const date   = document.getElementById('date').value;
+
+      // VALIDASI — cek apakah semua field sudah diisi & valid
+      if (!desc || !amount || amount <= 0 || !date) {
+        showToast('⚠️ Lengkapi semua field dengan benar!');
+        return; // Hentikan fungsi jika ada yang kosong
+      }
+
+      // Buat object transaksi baru
+      const newTx = {
+        id:     Date.now(),  // ID unik dari timestamp (waktu sekarang dalam ms)
+        type,                // Shorthand: type: type
+        desc,
+        amount,
+        cat,
+        date
+      };
+
+      // Tambahkan ke awal array (unshift = masuk depan, push = belakang)
+      transactions.unshift(newTx);
+      simpanData();      // Simpan ke localStorage
+      render();          // Perbarui tampilan
+      clearForm();       // Kosongkan form
+      showToast('✅ Transaksi berhasil ditambahkan!');
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: deleteTransaction
+      ============================================================
+      Hapus transaksi berdasarkan id.
+      filter() → buat array baru, hanya berisi item yang lolos kondisi
+      tx.id !== id berarti: simpan semua KECUALI yang id-nya cocok
+    */
+    function deleteTransaction(id) {
+      transactions = transactions.filter(tx => tx.id !== id);
+      simpanData();
+      render();
+      showToast('🗑️ Transaksi dihapus.');
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: setFilter
+      ============================================================
+      Ganti filter aktif dan perbarui tampilan tombol filter.
+      el = elemen button yang diklik (dikirim lewat onclick)
+    */
+    function setFilter(filter, el) {
+      activeFilter = filter;
+      
+      // Hapus class 'active' dari semua tombol filter
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      // querySelectorAll() → ambil SEMUA elemen yang cocok selector
+      // classList.remove() → hapus sebuah class dari elemen
+      
+      el.classList.add('active'); // Tambah 'active' ke tombol yang diklik
+      renderList(); // Perbarui list transaksi
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: updateSummary
+      ============================================================
+      Hitung total saldo, pemasukan, pengeluaran lalu tampilkan.
+      reduce() → "lipat" array menjadi satu nilai (seperti menjumlah)
+    */
+    function updateSummary() {
+      // Jumlahkan semua pemasukan
+      const totalIncome = transactions
+        .filter(tx => tx.type === 'income')
+        .reduce((sum, tx) => sum + tx.amount, 0);
+        // reduce: mulai dari 0, tambahkan tx.amount setiap iterasi
+        // sum = akumulator, tx = item saat ini
+
+      // Jumlahkan semua pengeluaran
+      const totalExpense = transactions
+        .filter(tx => tx.type === 'expense')
+        .reduce((sum, tx) => sum + tx.amount, 0);
+
+      const balance = totalIncome - totalExpense;
+
+      // Perbarui teks di tampilan
+      document.getElementById('total-balance').textContent = formatRupiah(balance);
+      document.getElementById('total-income').textContent  = formatRupiah(totalIncome);
+      document.getElementById('total-expense').textContent = formatRupiah(totalExpense);
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: renderList
+      ============================================================
+      Tampilkan daftar transaksi (bisa difilter).
+      Template literal (`...${variabel}...`) → cara mudah buat HTML string
+      innerHTML → langsung set konten HTML dari sebuah elemen
+    */
+    function renderList() {
+      const listEl = document.getElementById('transaction-list');
+
+      // Filter data sesuai pilihan aktif
+      const filtered = activeFilter === 'semua'
+        ? transactions                                      // Tampilkan semua
+        : transactions.filter(tx => tx.type === activeFilter); // Filter by type
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-msg">Belum ada transaksi di sini 🌱</div>';
+        return;
+      }
+
+      // Buat HTML untuk setiap transaksi menggunakan .map() + .join()
+      // map()  → ubah setiap item array menjadi sesuatu yang lain
+      // join() → gabungkan array string menjadi satu string
+      listEl.innerHTML = filtered.map(tx => `
+        <div class="tx-item">
+          <div class="tx-icon ${tx.type}">
+            ${tx.type === 'income' ? '📈' : '📉'}
+          </div>
+          <div class="tx-info">
+            <div class="tx-desc">${tx.desc}</div>
+            <div class="tx-cat">${tx.cat} · ${formatDate(tx.date)}</div>
+          </div>
+          <div class="tx-amount ${tx.type}">
+            ${tx.type === 'income' ? '+' : '-'}${formatRupiah(tx.amount)}
+          </div>
+          <button class="tx-del" onclick="deleteTransaction(${tx.id})" title="Hapus">×</button>
+        </div>
+      `).join('');
+      // Template literal: backtick (`) membungkus HTML dengan ${} untuk variabel
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: renderChart
+      ============================================================
+      Buat grafik batang sederhana berdasarkan kategori.
+      Menggunakan objek sebagai "dictionary" untuk menghitung total per kategori.
+    */
+    function renderChart() {
+      const chartSection = document.getElementById('chart-section');
+      const chartBars    = document.getElementById('chart-bars');
+
+      if (transactions.length === 0) {
+        chartSection.style.display = 'none';
+        return;
+      }
+      chartSection.style.display = 'block';
+
+      // Hitung total per kategori
+      const totals = {}; // Object kosong sebagai "map" kategori → jumlah
+      transactions.forEach(tx => {
+        if (!totals[tx.cat]) totals[tx.cat] = { type: tx.type, total: 0 };
+        totals[tx.cat].total += tx.amount;
+      });
+
+      // Cari nilai maksimal untuk skala grafik (100%)
+      const maxVal = Math.max(...Object.values(totals).map(v => v.total));
+      // Math.max(...arr) → nilai terbesar dari array
+      // Object.values()  → ambil semua nilai dari object
+
+      // Render setiap baris grafik
+      chartBars.innerHTML = Object.entries(totals)
+        // Object.entries() → ubah object jadi array [key, value]
+        .sort((a, b) => b[1].total - a[1].total) // Urutkan dari besar ke kecil
+        .slice(0, 6) // Ambil 6 teratas saja
+        .map(([cat, data]) => {
+          const pct = (data.total / maxVal * 100).toFixed(0); // Persen lebar batang
+          return `
+            <div class="chart-row">
+              <div class="chart-label">${cat.split(' ').slice(1).join(' ')}</div>
+              <div class="chart-track">
+                <div class="chart-fill ${data.type}" style="width:${pct}%"></div>
+              </div>
+              <div class="chart-val ${data.type === 'income' ? 'green' : 'red'}" 
+                   style="color:${data.type === 'income' ? 'var(--green)' : 'var(--red)'}">
+                ${formatRupiah(data.total)}
+              </div>
+            </div>`;
+        }).join('');
+    }
+
+    /* 
+      ============================================================
+      FUNGSI PENDUKUNG
+      ============================================================
+    */
+
+    // Format tanggal dari "2024-01-15" menjadi "15 Jan 2024"
+    function formatDate(dateStr) {
+      const d = new Date(dateStr); // Ubah string ke objek Date
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // Kosongkan form setelah simpan
+    function clearForm() {
+      document.getElementById('desc').value   = '';
+      document.getElementById('amount').value = '';
+      // Tanggal & kategori dibiarkan untuk kemudahan input berikutnya
+    }
+
+    // Tampilkan notifikasi singkat (toast)
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');            // Tambah class 'show' → opacity: 1
+      setTimeout(() => {
+        toast.classList.remove('show');       // Hapus class setelah 2.5 detik
+      }, 2500);
+      // setTimeout(fungsi, waktu_ms) → jalankan fungsi setelah X milidetik
+    }
+
+    // Fungsi utama: panggil semua render sekaligus
+    function render() {
+      updateSummary();
+      renderList();
+      renderChart();
+    }
+
+    /* 
+      ============================================================
+      INISIALISASI (Dijalankan Saat Halaman Pertama Kali Dibuka)
+      ============================================================
+    */
+
+    // Set tanggal hari ini sebagai default di input date
+    document.getElementById('date').valueAsDate = new Date();
+    // new Date() → objek tanggal & waktu saat ini
+
+    // Isi kategori sesuai tipe default (pemasukan)
+    updateCategories();
+
+    // Dengarkan perubahan pada dropdown Tipe → perbarui kategori
+    document.getElementById('type').addEventListener('change', updateCategories);
+    // addEventListener('change', fungsi) → pantau event 'change' pada elemen
+
+    // Tampilkan data yang sudah ada (dari localStorage)
+    render();
+
+    // Izinkan tombol Enter untuk submit form
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTransaction();
+      // e.key → tombol yang ditekan
+    });
+
+  </script>
+
+</body>
+</html>
