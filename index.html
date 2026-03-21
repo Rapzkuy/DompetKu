@@ -825,29 +825,71 @@
 
     /* 
       ============================================================
-      FUNGSI: prosesGambar
+      FUNGSI: prosesGambar (dengan KOMPRESI OTOMATIS)
       ============================================================
-      Mengubah file gambar menjadi Base64 string agar bisa disimpan
-      di localStorage (localStorage hanya bisa menyimpan teks).
+      Cara kerja kompresi:
+      1. Baca file asli dengan FileReader
+      2. Load gambar ke elemen <img> sementara
+      3. Buat <canvas> dengan ukuran lebih kecil (max 800px)
+      4. Gambar ulang foto ke canvas yang lebih kecil
+      5. Export canvas sebagai JPEG kualitas 60%
 
-      FileReader → API bawaan browser untuk membaca file
-      readAsDataURL() → baca file sebagai URL data (base64)
-      onload → callback yang dipanggil setelah file selesai dibaca
+      Canvas = "kanvas digital" bawaan browser untuk manipulasi gambar
+      toDataURL('image/jpeg', 0.6) → export JPEG kualitas 60%
     */
     function prosesGambar(file) {
       const reader = new FileReader();
       reader.onload = e => {
-        fotoBase64 = e.target.result; // Simpan hasil base64 ke variabel
-        // Tampilkan preview
-        const preview = document.getElementById('foto-preview');
-        const placeholder = document.getElementById('upload-placeholder');
-        const clearBtn = document.getElementById('foto-clear');
-        preview.src = fotoBase64;
-        preview.style.display = 'block';
-        placeholder.style.display = 'none';
-        clearBtn.style.display = 'inline-block';
+
+        // Buat elemen gambar sementara (tidak tampil di layar)
+        const img = new Image();
+        img.onload = () => {
+
+          // Ukuran maksimal hasil kompresi (piksel)
+          const MAX_SIZE = 800;
+          let width  = img.width;
+          let height = img.height;
+
+          // Hitung ulang ukuran proporsional
+          // Contoh: 3000x2000 → 800x533
+          if (width > height) {
+            if (width > MAX_SIZE) { height = Math.round(height * MAX_SIZE / width); width = MAX_SIZE; }
+          } else {
+            if (height > MAX_SIZE) { width = Math.round(width * MAX_SIZE / height); height = MAX_SIZE; }
+          }
+
+          // Buat canvas dengan ukuran yang sudah dikecilkan
+          const canvas = document.createElement('canvas');
+          canvas.width  = width;
+          canvas.height = height;
+
+          // Gambar ulang foto ke canvas
+          // getContext('2d') → ambil "kuas" untuk menggambar di canvas
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Export sebagai JPEG kualitas 60% (nilai 0.0 - 1.0)
+          fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
+
+          // Hitung ukuran sebelum & sesudah kompresi
+          const sebelum = Math.round(file.size / 1024);
+          const sesudah = Math.round(fotoBase64.length * 0.75 / 1024);
+
+          // Tampilkan preview
+          const preview     = document.getElementById('foto-preview');
+          const placeholder = document.getElementById('upload-placeholder');
+          const clearBtn    = document.getElementById('foto-clear');
+          preview.src = fotoBase64;
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          clearBtn.style.display = 'inline-block';
+          clearBtn.textContent = `× Hapus (${sesudah}KB, hemat dari ${sebelum}KB)`;
+
+          showToast(`🗜️ Foto dikompres: ${sebelum}KB → ${sesudah}KB`);
+        };
+        img.src = e.target.result;
       };
-      reader.readAsDataURL(file); // Mulai baca file
+      reader.readAsDataURL(file);
     }
 
     /* 
