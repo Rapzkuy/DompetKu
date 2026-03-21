@@ -37,7 +37,7 @@
       Contoh penggunaan: color: var(--gold);
     */
     :root {
-      --bg:linear-gradient(120deg, #0f2027, #042531, #092d3c);   /* Warna latar belakang utama (hitam pekat) */
+      --bg:        #0d0d0f;   /* Warna latar belakang utama (hitam pekat) */
       --surface:   #16161a;   /* Warna kartu/kotak (abu gelap) */
       --surface2:  #1e1e24;   /* Warna permukaan kedua (sedikit lebih terang) */
       --border:    #2a2a35;   /* Warna garis tepi/border */
@@ -512,6 +512,114 @@
       /* Ubah dari 2 kolom menjadi 1 kolom */
       .two-col { grid-template-columns: 1fr; }
     }
+
+    /* 
+      ============================================================
+      UPLOAD AREA (FOTO BUKTI)
+      ============================================================
+      Area klik/drag untuk upload foto bukti transaksi.
+      border: 2px dashed → garis putus-putus khas area upload
+      cursor: pointer    → tanda bisa diklik
+    */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* Saat mouse hover di atas area upload */
+    .upload-area:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+
+    /* Saat file di-drag ke atas area */
+    .upload-area.dragover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+
+    /* Tombol hapus foto */
+    #foto-clear {
+      background: rgba(241,96,96,0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      margin-top: 6px;
+    }
+
+    /* 
+      ============================================================
+      MODAL FOTO (LIGHTBOX)
+      ============================================================
+      Tampil di atas semua konten saat foto diklik untuk diperbesar.
+      position: fixed   → menempel di layar, tidak ikut scroll
+      inset: 0          → shorthand untuk top:0 right:0 bottom:0 left:0
+      z-index: 2000     → di atas toast (1000) dan semua elemen lain
+      backdrop-filter   → efek blur pada latar belakang (frosted glass)
+    */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(6px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-overlay img {
+      max-width: 90vw;   /* Maksimal 90% lebar layar */
+      max-height: 85vh;  /* Maksimal 85% tinggi layar */
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      object-fit: contain;
+    }
+
+    /* Tombol tutup modal (×) */
+    .modal-close {
+      position: absolute;
+      top: 20px; right: 24px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .modal-close:hover { opacity: 1; }
+
+    /* Thumbnail foto kecil di dalam item transaksi */
+    .tx-thumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: transform 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .tx-thumb:hover { transform: scale(1.1); border-color: var(--gold); }
   </style>
 </head>
 
@@ -592,6 +700,23 @@
           <input type="date" id="date">
         </div>
 
+        <!-- Upload Foto Bukti (Opsional) -->
+        <div class="form-group">
+          <label>Foto Bukti <span style="color:var(--muted);font-size:0.7rem;text-transform:none;letter-spacing:0">(opsional)</span></label>
+          <!-- Area drag & drop / klik untuk upload foto -->
+          <div class="upload-area" id="upload-area" onclick="document.getElementById('foto-input').click()">
+            <div id="upload-placeholder">
+              <div style="font-size:1.6rem">📎</div>
+              <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Klik atau drag foto ke sini</div>
+            </div>
+            <!-- Preview foto sebelum disimpan -->
+            <img id="foto-preview" style="display:none;max-width:100%;max-height:120px;border-radius:8px;object-fit:cover;">
+            <button id="foto-clear" onclick="clearFoto(event)" style="display:none">× Hapus foto</button>
+          </div>
+          <!-- Input file tersembunyi, dipicu oleh klik upload-area -->
+          <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="handleFoto(event)">
+        </div>
+
         <!-- Tombol Simpan — onclick memanggil fungsi addTransaction() -->
         <button class="btn btn-primary" onclick="addTransaction()">
           Simpan Transaksi
@@ -623,6 +748,12 @@
 
     </div><!-- /two-col -->
   </div><!-- /container -->
+
+  <!-- Modal lightbox untuk lihat foto bukti diperbesar -->
+  <div class="modal-overlay" id="foto-modal" onclick="closeFotoModal()">
+    <button class="modal-close" onclick="closeFotoModal()">×</button>
+    <img id="modal-img" src="" alt="Bukti transaksi">
+  </div>
 
   <!-- Notifikasi toast -->
   <div class="toast" id="toast"></div>
@@ -657,25 +788,107 @@
     // Array untuk menyimpan semua transaksi
     // localStorage adalah "memori" browser yang tersimpan walau halaman di-refresh
     let transactions = JSON.parse(localStorage.getItem('dompetku') || '[]');
-    /*
-      JSON.parse()       → Ubah teks JSON jadi object JavaScript
-      localStorage.getItem('dompetku') → Ambil data tersimpan
-      || '[]'            → Jika tidak ada data, gunakan array kosong
-    */
-
-    let activeFilter = 'semua'; // Filter aktif saat ini
+    let activeFilter = 'semua';
+    let fotoBase64 = null; // Menyimpan foto sementara sebelum transaksi disimpan
 
     /* 
       ============================================================
-      FUNGSI: formatRupiah
+      DRAG & DROP FOTO
       ============================================================
-      Fungsi = blok kode yang bisa dipanggil berulang kali.
-      Parameter: angka (misalnya 150000)
-      Return: string teks (misalnya "Rp 150.000")
-      
-      Intl.NumberFormat → API bawaan browser untuk format angka
-      locale 'id-ID'    → format Indonesia (titik sebagai pemisah ribuan)
+      Mendeteksi file yang di-drag ke area upload.
+      preventDefault() → mencegah browser membuka file secara langsung
     */
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.addEventListener('dragover', e => {
+      e.preventDefault(); // Wajib agar 'drop' event bisa terpicu
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const file = e.dataTransfer.files[0]; // Ambil file pertama yang di-drop
+      if (file && file.type.startsWith('image/')) prosesGambar(file);
+    });
+
+    /* 
+      ============================================================
+      FUNGSI: handleFoto
+      ============================================================
+      Dipanggil saat user memilih file dari input[type=file].
+      event.target.files[0] → file pertama yang dipilih user
+    */
+    function handleFoto(event) {
+      const file = event.target.files[0];
+      if (file) prosesGambar(file);
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: prosesGambar
+      ============================================================
+      Mengubah file gambar menjadi Base64 string agar bisa disimpan
+      di localStorage (localStorage hanya bisa menyimpan teks).
+
+      FileReader → API bawaan browser untuk membaca file
+      readAsDataURL() → baca file sebagai URL data (base64)
+      onload → callback yang dipanggil setelah file selesai dibaca
+    */
+    function prosesGambar(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        fotoBase64 = e.target.result; // Simpan hasil base64 ke variabel
+        // Tampilkan preview
+        const preview = document.getElementById('foto-preview');
+        const placeholder = document.getElementById('upload-placeholder');
+        const clearBtn = document.getElementById('foto-clear');
+        preview.src = fotoBase64;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        clearBtn.style.display = 'inline-block';
+      };
+      reader.readAsDataURL(file); // Mulai baca file
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: clearFoto
+      ============================================================
+      Hapus foto yang sudah dipilih, reset tampilan upload area.
+      event.stopPropagation() → mencegah klik tombol ini 
+      memicu klik pada elemen induknya (upload-area)
+    */
+    function clearFoto(event) {
+      event.stopPropagation();
+      fotoBase64 = null;
+      document.getElementById('foto-input').value = '';
+      document.getElementById('foto-preview').style.display = 'none';
+      document.getElementById('foto-preview').src = '';
+      document.getElementById('upload-placeholder').style.display = 'flex';
+      document.getElementById('foto-clear').style.display = 'none';
+    }
+
+    /* 
+      ============================================================
+      FUNGSI: openFotoModal & closeFotoModal
+      ============================================================
+      Tampilkan/sembunyikan modal lightbox saat foto diklik.
+    */
+    function openFotoModal(src) {
+      document.getElementById('modal-img').src = src;
+      document.getElementById('foto-modal').classList.add('open');
+    }
+    function closeFotoModal() {
+      document.getElementById('foto-modal').classList.remove('open');
+    }
+
+    // Tutup modal jika tekan tombol Escape di keyboard
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeFotoModal();
+    });
+
+    /* ============================================================ */
+
     function formatRupiah(angka) {
       return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
     }
@@ -739,19 +952,20 @@
 
       // Buat object transaksi baru
       const newTx = {
-        id:     Date.now(),  // ID unik dari timestamp (waktu sekarang dalam ms)
-        type,                // Shorthand: type: type
+        id:     Date.now(),
+        type,
         desc,
         amount,
         cat,
-        date
+        date,
+        foto: fotoBase64  // Simpan foto base64 (null jika tidak ada)
       };
 
-      // Tambahkan ke awal array (unshift = masuk depan, push = belakang)
       transactions.unshift(newTx);
-      simpanData();      // Simpan ke localStorage
-      render();          // Perbarui tampilan
-      clearForm();       // Kosongkan form
+      simpanData();
+      render();
+      clearForm();
+      clearFoto({ stopPropagation: () => {} }); // Reset foto setelah simpan
       showToast('✅ Transaksi berhasil ditambahkan!');
     }
 
@@ -850,6 +1064,7 @@
             <div class="tx-desc">${tx.desc}</div>
             <div class="tx-cat">${tx.cat} · ${formatDate(tx.date)}</div>
           </div>
+          ${tx.foto ? `<img class="tx-thumb" src="${tx.foto}" alt="bukti" onclick="openFotoModal('${tx.foto}')" title="Lihat bukti">` : ''}
           <div class="tx-amount ${tx.type}">
             ${tx.type === 'income' ? '+' : '-'}${formatRupiah(tx.amount)}
           </div>
