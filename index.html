@@ -1,1235 +1,938 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <!-- 
-    ============================================================
-    META & JUDUL HALAMAN
-    ============================================================
-    <meta charset="UTF-8">  → Mengatur encoding karakter agar 
-                              huruf Indonesia (á, é, dll) tampil benar
-    <meta name="viewport">  → Membuat tampilan responsif di HP
-    <title>               → Judul yang muncul di tab browser
-  -->
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>💰 Dompetku — Kelola Keuangan</title>
-
-  <!-- 
-    ============================================================
-    GOOGLE FONTS
-    ============================================================
-    Mengambil font dari internet (Google Fonts).
-    "Playfair Display" → font judul bergaya elegan
-    "DM Sans"          → font teks biasa yang bersih & modern
-  -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    /* 
-      ============================================================
-      CSS VARIABLES (Variabel Warna & Ukuran)
-      ============================================================
-      Variabel CSS ditulis dengan awalan "--" di dalam :root {}.
-      :root berarti "berlaku untuk seluruh halaman".
-      Tujuannya: kalau mau ganti warna, cukup ubah di sini saja,
-      tidak perlu cari satu per satu di seluruh kode.
-
-      Contoh penggunaan: color: var(--gold);
-    */
     :root {
-      --bg:linear-gradient(120deg, #0f2027, #042531, #092d3c);   /* Warna latar belakang utama (hitam pekat) */
-      --surface:   #16161a;   /* Warna kartu/kotak (abu gelap) */
-      --surface2:  #1e1e24;   /* Warna permukaan kedua (sedikit lebih terang) */
-      --border:    #2a2a35;   /* Warna garis tepi/border */
-      --gold:      #c9a84c;   /* Warna emas untuk aksen utama */
-      --gold-lite: #e8c96e;   /* Warna emas lebih terang */
-      --green:     #3ecf74;   /* Warna hijau untuk pemasukan */
-      --red:       #f16060;   /* Warna merah untuk pengeluaran */
-      --text:      #f0ede8;   /* Warna teks utama (putih hangat) */
-      --muted:     #7a7880;   /* Warna teks redup/keterangan */
-      --radius:    14px;      /* Sudut membulat pada kotak */
+      --bg:        linear-gradient(120deg,#0f2027,#042531,#092d3c);
+      --surface:   #16161a;
+      --surface2:  #1e1e24;
+      --border:    #2a2a35;
+      --gold:      #c9a84c;
+      --gold-lite: #e8c96e;
+      --green:     #3ecf74;
+      --red:       #f16060;
+      --blue:      #5b9cf6;
+      --text:      #f0ede8;
+      --muted:     #7a7880;
+      --radius:    14px;
     }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 60px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    .container{max-width:820px;margin:0 auto;animation:fadeUp .5s ease both;}
 
-    /* 
-      ============================================================
-      RESET & BASE STYLE
-      ============================================================
-      * { margin:0; padding:0 } → Hapus semua jarak bawaan browser
-      box-sizing: border-box   → Ukuran kotak sudah termasuk padding & border
-      font-family              → Font default seluruh halaman
-    */
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    /* HEADER */
+    header{text-align:center;margin-bottom:36px;padding-top:20px;}
+    header::before{content:'';display:block;width:50px;height:3px;background:var(--gold);margin:0 auto 18px;border-radius:2px;}
+    header h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,6vw,3rem);color:var(--gold-lite);letter-spacing:-.5px;}
+    header p{color:var(--muted);margin-top:6px;font-size:.9rem;}
+
+    /* SUMMARY */
+    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+    .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;text-align:center;position:relative;overflow:hidden;transition:transform .2s;}
+    .summary-card:hover{transform:translateY(-3px);}
+    .summary-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+    .summary-card.balance::after{background:var(--gold);}
+    .summary-card.income::after{background:var(--green);}
+    .summary-card.expense::after{background:var(--red);}
+    .summary-card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;}
+    .summary-card .amount{font-family:'Playfair Display',serif;font-size:clamp(1.1rem,3vw,1.5rem);font-weight:700;}
+    .amount.green{color:var(--green);} .amount.red{color:var(--red);} .amount.gold{color:var(--gold-lite);}
+
+    /* TWO COL */
+    .two-col{display:grid;grid-template-columns:1fr 1.4fr;gap:20px;align-items:start;}
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+    .panel-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold-lite);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+
+    /* FORM */
+    .form-group{margin-bottom:16px;}
+    .form-group label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:7px;}
+    .form-group input,.form-group select{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
+    .form-group input:focus,.form-group select:focus{border-color:var(--gold);}
+    .form-group input::placeholder{color:var(--muted);}
+    .form-group select option{background:var(--surface2);}
+    .btn{width:100%;padding:13px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+    .btn-primary{background:var(--gold);color:#111;}
+    .btn-primary:hover{background:var(--gold-lite);transform:translateY(-1px);}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;}
+    .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+
+    /* TRANSACTION LIST */
+    #transaction-list{display:flex;flex-direction:column;gap:10px;}
+    .tx-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);animation:fadeUp .3s ease both;}
+    .tx-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+    .tx-icon.income{background:rgba(62,207,116,.15);} .tx-icon.expense{background:rgba(241,96,96,.15);}
+    .tx-icon.recurring{background:rgba(91,156,246,.15);}
+    .tx-info{flex:1;min-width:0;}
+    .tx-info .tx-desc{font-size:.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tx-info .tx-cat{font-size:.72rem;color:var(--muted);margin-top:2px;}
+    .tx-amount{font-weight:600;font-size:.9rem;text-align:right;}
+    .tx-amount.income{color:var(--green);} .tx-amount.expense{color:var(--red);}
+    .tx-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 6px;border-radius:4px;transition:color .2s,background .2s;}
+    .tx-del:hover{color:var(--red);background:rgba(241,96,96,.1);}
+    .empty-msg{text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0;}
+    .badge-recurring{font-size:.6rem;background:rgba(91,156,246,.2);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+
+    /* FILTER */
+    .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .filter-btn.active{background:var(--gold);border-color:var(--gold);color:#111;font-weight:600;}
+
+    /* GRAFIK BATANG */
+    .chart-section{margin-top:20px;}
+    .chart-bar-wrap{display:flex;flex-direction:column;gap:10px;}
+    .chart-row{display:flex;align-items:center;gap:10px;font-size:.78rem;}
+    .chart-label{width:80px;color:var(--muted);flex-shrink:0;}
+    .chart-track{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+    .chart-fill{height:100%;border-radius:5px;transition:width .6s ease;}
+    .chart-fill.income{background:var(--green);} .chart-fill.expense{background:var(--red);}
+    .chart-val{width:70px;text-align:right;font-weight:500;}
+
+    /* ============================================================
+       GRAFIK GARIS — mirip style Google Sheets / chart biasa
+       Panel lebar penuh, ada judul, legend, sumbu X & Y
+    ============================================================ */
+    .line-chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
+    .line-chart-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:4px;}
+    .chart-title-text{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold-lite);}
+
+    /* Tab filter periode grafik */
+    .chart-tabs{display:flex;gap:6px;}
+    .chart-tab{padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .chart-tab.active{background:var(--gold);border-color:var(--gold);color:#111;font-weight:600;}
+
+    /* Legend */
+    .chart-legend{display:flex;gap:20px;flex-wrap:wrap;margin:12px 0;font-size:.8rem;}
+    .legend-item{display:flex;align-items:center;gap:6px;}
+    .legend-line{width:24px;height:3px;border-radius:2px;flex-shrink:0;}
+
+    /* Wrapper canvas dengan rasio aspek */
+    .canvas-wrap{position:relative;width:100%;}
+    #lineChart{display:block;width:100%;}
+    .chart-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:40px 0;}
+
+    /* ============================================================
+       PANEL PEMASUKAN RUTIN
+       Fitur opsional: tambah jadwal pemasukan otomatis
+    ============================================================ */
+    .recurring-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
+    .recurring-list{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+    .rec-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+    .rec-info{flex:1;min-width:0;}
+    .rec-name{font-size:.88rem;font-weight:500;}
+    .rec-detail{font-size:.72rem;color:var(--muted);margin-top:2px;}
+    .rec-amount{font-weight:600;font-size:.9rem;color:var(--green);text-align:right;}
+    .rec-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 6px;border-radius:4px;transition:color .2s;}
+    .rec-del:hover{color:var(--red);}
+    .rec-status{font-size:.65rem;padding:2px 7px;border-radius:4px;margin-left:6px;}
+    .rec-status.ok{background:rgba(62,207,116,.15);color:var(--green);}
+    .rec-status.pending{background:rgba(201,168,76,.15);color:var(--gold);}
+
+    /* Form tambah rutin (collapsible) */
+    .rec-form{background:var(--surface2);border-radius:10px;padding:16px;margin-top:12px;border:1px solid var(--border);}
+    .rec-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .rec-form-grid .form-group{margin-bottom:0;}
+    .rec-form .btn{margin-top:12px;}
+
+    /* UPLOAD / FOTO */
+    .upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;min-height:70px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;}
+    .upload-area:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+    .upload-area.dragover{border-color:var(--gold);background:rgba(201,168,76,.1);}
+    #foto-clear{background:rgba(241,96,96,.15);border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:6px;}
+    .tx-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;border:1px solid var(--border);transition:transform .2s,border-color .2s;flex-shrink:0;}
+    .tx-thumb:hover{transform:scale(1.1);border-color:var(--gold);}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal-overlay img{max-width:90vw;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);object-fit:contain;}
+    .modal-close{position:absolute;top:20px;right:24px;background:none;border:none;color:white;font-size:2rem;cursor:pointer;line-height:1;opacity:.7;transition:opacity .2s;}
+    .modal-close:hover{opacity:1;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--gold);color:var(--text);padding:12px 22px;border-radius:30px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:1000;white-space:nowrap;}
+    .toast.show{opacity:1;}
+
+    @media(max-width:600px){
+      .summary-grid{grid-template-columns:1fr;gap:10px;}
+      .two-col{grid-template-columns:1fr;}
+      .rec-form-grid{grid-template-columns:1fr;}
     }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;          /* Tinggi minimal = tinggi layar penuh */
-      padding: 24px 16px 60px;    /* Jarak dalam: atas kanan bawah kiri */
-    }
-
-    /* 
-      ============================================================
-      ANIMASI FADE-IN
-      ============================================================
-      @keyframes mendefinisikan nama animasi dan tahapan gerakannya.
-      from → keadaan awal animasi
-      to   → keadaan akhir animasi
-      
-      animation-fill-mode: both → pertahankan keadaan akhir animasi
-    */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* 
-      ============================================================
-      LAYOUT UTAMA
-      ============================================================
-      max-width: 780px  → Lebar maksimal konten
-      margin: 0 auto    → Tengahkan secara horizontal
-    */
-    .container {
-      max-width: 780px;
-      margin: 0 auto;
-      animation: fadeUp 0.5s ease both; /* Animasi muncul dari bawah */
-    }
-
-    /* ---- HEADER ---- */
-    header {
-      text-align: center;
-      margin-bottom: 36px;
-      padding-top: 20px;
-    }
-
-    /* 
-      Dekoratif garis emas di atas judul.
-      ::before adalah "elemen semu" yang dibuat murni lewat CSS,
-      tidak ada di HTML. Berguna untuk dekorasi tanpa menambah tag.
-    */
-    header::before {
-      content: '';                        /* Wajib ada agar elemen muncul */
-      display: block;
-      width: 50px;
-      height: 3px;
-      background: var(--gold);
-      margin: 0 auto 18px;
-      border-radius: 2px;
-    }
-
-    header h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 6vw, 3rem); /* clamp: ukuran min, responsif, max */
-      color: var(--gold-lite);
-      letter-spacing: -0.5px;
-    }
-
-    header p {
-      color: var(--muted);
-      margin-top: 6px;
-      font-size: 0.9rem;
-    }
-
-    /* 
-      ============================================================
-      KARTU SALDO (RINGKASAN)
-      ============================================================
-      display: grid        → Tata letak kotak (grid system)
-      grid-template-columns→ Tentukan jumlah & lebar kolom
-      repeat(3, 1fr)       → 3 kolom dengan lebar sama rata (1 fraction)
-      gap                  → Jarak antar kotak dalam grid
-    */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 28px;
-    }
-
-    .summary-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 16px;
-      text-align: center;
-      position: relative;      /* Agar elemen anak bisa diposisikan relatif */
-      overflow: hidden;        /* Sembunyikan bagian yang melewati batas */
-      transition: transform 0.2s; /* Animasi saat hover */
-    }
-
-    /* Menggeser kartu ke atas sedikit saat mouse di atasnya */
-    .summary-card:hover { transform: translateY(-3px); }
-
-    /* Garis warna di bagian atas tiap kartu */
-    .summary-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-    }
-
-    /* Setiap kartu punya warna garis berbeda */
-    .summary-card.balance::after  { background: var(--gold); }
-    .summary-card.income::after   { background: var(--green); }
-    .summary-card.expense::after  { background: var(--red); }
-
-    .summary-card .label {
-      font-size: 0.7rem;
-      text-transform: uppercase;  /* Huruf kapital semua */
-      letter-spacing: 1.5px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .summary-card .amount {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.1rem, 3vw, 1.5rem);
-      font-weight: 700;
-    }
-
-    .amount.green { color: var(--green); }
-    .amount.red   { color: var(--red); }
-    .amount.gold  { color: var(--gold-lite); }
-
-    /* 
-      ============================================================
-      PANEL 2 KOLOM (FORM + RIWAYAT)
-      ============================================================
-      Di layar besar: form kiri, riwayat kanan (2 kolom)
-      Di layar kecil: susun ke bawah (1 kolom) via @media
-    */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: 20px;
-      align-items: start; /* Sejajarkan ke bagian atas */
-    }
-
-    /* ---- KOTAK/PANEL UMUM ---- */
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-    }
-
-    .panel-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      color: var(--gold-lite);
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border); /* Garis pemisah */
-    }
-
-    /* 
-      ============================================================
-      FORM INPUT
-      ============================================================
-      label  → Teks keterangan di atas input
-      input  → Kotak isian teks/angka
-      select → Kotak pilihan dropdown
-    */
-    .form-group {
-      margin-bottom: 16px; /* Jarak antar field */
-    }
-
-    .form-group label {
-      display: block;       /* Agar label ada di baris sendiri */
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 7px;
-    }
-
-    /* Satu style untuk input text, number, dan select */
-    .form-group input,
-    .form-group select {
-      width: 100%;          /* Lebar penuh */
-      padding: 11px 14px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
-      outline: none;        /* Hapus outline bawaan browser */
-      transition: border-color 0.2s; /* Animasi saat fokus */
-    }
-
-    /* Saat input diklik/fokus, ganti warna border */
-    .form-group input:focus,
-    .form-group select:focus {
-      border-color: var(--gold);
-    }
-
-    /* Warna teks placeholder (teks abu sebelum diisi) */
-    .form-group input::placeholder { color: var(--muted); }
-
-    /* Warna background option dalam select */
-    .form-group select option { background: var(--surface2); }
-
-    /* 
-      ============================================================
-      TOMBOL (BUTTON)
-      ============================================================
-      cursor: pointer → Ubah kursor jadi tangan saat hover
-      border: none    → Hapus border bawaan button
-      transition      → Animasi perubahan style
-    */
-    .btn {
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 8px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.5px;
-    }
-
-    /* Tombol utama dengan warna emas */
-    .btn-primary {
-      background: var(--gold);
-      color: #111;
-    }
-    .btn-primary:hover {
-      background: var(--gold-lite);
-      transform: translateY(-1px);  /* Naik sedikit saat hover */
-    }
-
-    /* 
-      ============================================================
-      DAFTAR TRANSAKSI
-      ============================================================
-    */
-    #transaction-list {
-      display: flex;
-      flex-direction: column; /* Susun item ke bawah */
-      gap: 10px;
-    }
-
-    /* Satu baris transaksi */
-    .tx-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 13px 14px;
-      background: var(--surface2);
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      animation: fadeUp 0.3s ease both; /* Animasi saat item baru ditambah */
-      transition: opacity 0.2s;
-    }
-
-    /* Lingkaran emoji di kiri */
-    .tx-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%; /* 50% = bentuk lingkaran */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0; /* Jangan mengecil meski ruang sempit */
-    }
-
-    .tx-icon.income  { background: rgba(62,207,116,0.15); }
-    .tx-icon.expense { background: rgba(241,96,96,0.15); }
-
-    /* Teks keterangan dan tanggal */
-    .tx-info { flex: 1; min-width: 0; } /* flex:1 = isi sisa ruang */
-
-    .tx-info .tx-desc {
-      font-size: 0.88rem;
-      font-weight: 500;
-      white-space: nowrap;    /* Jangan wrap ke baris baru */
-      overflow: hidden;       /* Sembunyikan jika terlalu panjang */
-      text-overflow: ellipsis;/* Tampilkan "..." kalau terpotong */
-    }
-
-    .tx-info .tx-cat {
-      font-size: 0.72rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    /* Jumlah uang di kanan */
-    .tx-amount {
-      font-weight: 600;
-      font-size: 0.9rem;
-      text-align: right;
-    }
-
-    .tx-amount.income  { color: var(--green); }
-    .tx-amount.expense { color: var(--red); }
-
-    /* Tombol hapus (×) */
-    .tx-del {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transition: color 0.2s, background 0.2s;
-    }
-    .tx-del:hover { color: var(--red); background: rgba(241,96,96,0.1); }
-
-    /* Pesan kosong saat belum ada transaksi */
-    .empty-msg {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding: 30px 0;
-    }
-
-    /* 
-      ============================================================
-      FILTER KATEGORI
-      ============================================================
-      Tombol-tombol kecil untuk filter tampilan transaksi
-    */
-    .filter-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap; /* Pindah baris jika layar sempit */
-      margin-bottom: 16px;
-    }
-
-    .filter-btn {
-      padding: 5px 12px;
-      border-radius: 20px; /* Sudut sangat membulat = bentuk pil */
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.2s;
-    }
-
-    /* Filter yang sedang aktif */
-    .filter-btn.active {
-      background: var(--gold);
-      border-color: var(--gold);
-      color: #111;
-      font-weight: 600;
-    }
-
-    /* 
-      ============================================================
-      GRAFIK BATANG SEDERHANA
-      ============================================================
-    */
-    .chart-section {
-      margin-top: 20px;
-    }
-
-    .chart-bar-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chart-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.78rem;
-    }
-
-    .chart-label { width: 80px; color: var(--muted); flex-shrink: 0; }
-
-    .chart-track {
-      flex: 1;
-      height: 10px;
-      background: var(--surface2);
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    /* Batang yang terisi (lebar ditentukan lewat JavaScript) */
-    .chart-fill {
-      height: 100%;
-      border-radius: 5px;
-      transition: width 0.6s ease; /* Animasi batang tumbuh */
-    }
-
-    .chart-fill.income  { background: var(--green); }
-    .chart-fill.expense { background: var(--red); }
-
-    .chart-val { width: 70px; text-align: right; font-weight: 500; }
-
-    /* 
-      ============================================================
-      NOTIFIKASI (TOAST)
-      ============================================================
-      position: fixed → Menempel di posisi tetap meski di-scroll
-      z-index: 1000   → Tampil di atas semua elemen lain
-      transform: translateX(-50%) → Tengahkan secara horizontal
-    */
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--surface2);
-      border: 1px solid var(--gold);
-      color: var(--text);
-      padding: 12px 22px;
-      border-radius: 30px;
-      font-size: 0.85rem;
-      opacity: 0;
-      pointer-events: none; /* Tidak bisa diklik saat tidak terlihat */
-      transition: opacity 0.3s;
-      z-index: 1000;
-      white-space: nowrap;
-    }
-
-    .toast.show { opacity: 1; }
-
-    /* 
-      ============================================================
-      RESPONSIVE — LAYAR KECIL (HP)
-      ============================================================
-      @media (max-width: 600px) → Aturan ini HANYA berlaku jika
-      lebar layar <= 600px (biasanya ukuran HP).
-      Ini disebut "media query" — inti dari desain responsif.
-    */
-    @media (max-width: 600px) {
-      /* Ubah dari 3 kolom menjadi 1 kolom di HP */
-      .summary-grid { grid-template-columns: 1fr; gap: 10px; }
-      /* Ubah dari 2 kolom menjadi 1 kolom */
-      .two-col { grid-template-columns: 1fr; }
-    }
-
-    /* 
-      ============================================================
-      UPLOAD AREA (FOTO BUKTI)
-      ============================================================
-      Area klik/drag untuk upload foto bukti transaksi.
-      border: 2px dashed → garis putus-putus khas area upload
-      cursor: pointer    → tanda bisa diklik
-    */
-    .upload-area {
-      border: 2px dashed var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      min-height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 8px;
-      position: relative;
-    }
-
-    /* Saat mouse hover di atas area upload */
-    .upload-area:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
-
-    /* Saat file di-drag ke atas area */
-    .upload-area.dragover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
-
-    /* Tombol hapus foto */
-    #foto-clear {
-      background: rgba(241,96,96,0.15);
-      border: 1px solid var(--red);
-      color: var(--red);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      margin-top: 6px;
-    }
-
-    /* 
-      ============================================================
-      MODAL FOTO (LIGHTBOX)
-      ============================================================
-      Tampil di atas semua konten saat foto diklik untuk diperbesar.
-      position: fixed   → menempel di layar, tidak ikut scroll
-      inset: 0          → shorthand untuk top:0 right:0 bottom:0 left:0
-      z-index: 2000     → di atas toast (1000) dan semua elemen lain
-      backdrop-filter   → efek blur pada latar belakang (frosted glass)
-    */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(6px);
-      z-index: 2000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s;
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .modal-overlay img {
-      max-width: 90vw;   /* Maksimal 90% lebar layar */
-      max-height: 85vh;  /* Maksimal 85% tinggi layar */
-      border-radius: 12px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-      object-fit: contain;
-    }
-
-    /* Tombol tutup modal (×) */
-    .modal-close {
-      position: absolute;
-      top: 20px; right: 24px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 2rem;
-      cursor: pointer;
-      line-height: 1;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-    .modal-close:hover { opacity: 1; }
-
-    /* Thumbnail foto kecil di dalam item transaksi */
-    .tx-thumb {
-      width: 36px;
-      height: 36px;
-      border-radius: 6px;
-      object-fit: cover;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      transition: transform 0.2s, border-color 0.2s;
-      flex-shrink: 0;
-    }
-    .tx-thumb:hover { transform: scale(1.1); border-color: var(--gold); }
   </style>
 </head>
-
 <body>
+<div class="container">
 
-  <div class="container">
+  <header>
+    <h1>Dompetku</h1>
+    <p>Catat, pantau, dan kelola keuanganmu dengan bijak</p>
+  </header>
 
-    <!-- ===== HEADER ===== -->
-    <header>
-      <h1>Dompetku</h1>
-      <p>Catat, pantau, dan kelola keuanganmu dengan bijak</p>
-    </header>
-
-    <!-- ===== KARTU RINGKASAN SALDO ===== -->
-    <!-- 
-      Tiga kartu: Saldo, Pemasukan, Pengeluaran
-      id="..." digunakan JavaScript untuk menemukan elemen ini
-      dan mengubah isinya (updateSummary)
-    -->
-    <div class="summary-grid">
-      <div class="summary-card balance">
-        <div class="label">💼 Saldo</div>
-        <div class="amount gold" id="total-balance">Rp 0</div>
-      </div>
-      <div class="summary-card income">
-        <div class="label">📈 Pemasukan</div>
-        <div class="amount green" id="total-income">Rp 0</div>
-      </div>
-      <div class="summary-card expense">
-        <div class="label">📉 Pengeluaran</div>
-        <div class="amount red" id="total-expense">Rp 0</div>
-      </div>
+  <!-- KARTU RINGKASAN -->
+  <div class="summary-grid">
+    <div class="summary-card balance">
+      <div class="label">💼 Saldo</div>
+      <div class="amount gold" id="total-balance">Rp 0</div>
     </div>
-
-    <!-- ===== AREA UTAMA: FORM + RIWAYAT ===== -->
-    <div class="two-col">
-
-      <!-- KOLOM KIRI: FORM TAMBAH TRANSAKSI -->
-      <div class="panel">
-        <div class="panel-title">＋ Tambah Transaksi</div>
-
-        <!-- 
-          Setiap <div class="form-group"> berisi 1 field input.
-          <label for="xxx"> harus sama dengan <input id="xxx">
-          agar label bisa diklik untuk fokus ke inputnya.
-        -->
-
-        <!-- Pilihan Tipe: Pemasukan / Pengeluaran -->
-        <div class="form-group">
-          <label for="type">Tipe</label>
-          <select id="type">
-            <option value="income">📈 Pemasukan</option>
-            <option value="expense">📉 Pengeluaran</option>
-          </select>
-        </div>
-
-        <!-- Input Keterangan/Deskripsi -->
-        <div class="form-group">
-          <label for="desc">Keterangan</label>
-          <input type="text" id="desc" placeholder="Contoh: Gaji bulan ini">
-        </div>
-
-        <!-- Input Jumlah (angka) -->
-        <div class="form-group">
-          <label for="amount">Jumlah (Rp)</label>
-          <input type="number" id="amount" placeholder="0" min="1">
-        </div>
-
-        <!-- Pilihan Kategori (isi otomatis via JS saat tipe berubah) -->
-        <div class="form-group">
-          <label for="category">Kategori</label>
-          <select id="category"></select>
-        </div>
-
-        <!-- Input Tanggal -->
-        <div class="form-group">
-          <label for="date">Tanggal</label>
-          <input type="date" id="date">
-        </div>
-
-        <!-- Upload Foto Bukti (Opsional) -->
-        <div class="form-group">
-          <label>Foto Bukti <span style="color:var(--muted);font-size:0.7rem;text-transform:none;letter-spacing:0">(opsional)</span></label>
-          <!-- Area drag & drop / klik untuk upload foto -->
-          <div class="upload-area" id="upload-area" onclick="document.getElementById('foto-input').click()">
-            <div id="upload-placeholder">
-              <div style="font-size:1.6rem">📎</div>
-              <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Klik atau drag foto ke sini</div>
-            </div>
-            <!-- Preview foto sebelum disimpan -->
-            <img id="foto-preview" style="display:none;max-width:100%;max-height:120px;border-radius:8px;object-fit:cover;">
-            <button id="foto-clear" onclick="clearFoto(event)" style="display:none">× Hapus foto</button>
-          </div>
-          <!-- Input file tersembunyi, dipicu oleh klik upload-area -->
-          <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="handleFoto(event)">
-        </div>
-
-        <!-- Tombol Simpan — onclick memanggil fungsi addTransaction() -->
-        <button class="btn btn-primary" onclick="addTransaction()">
-          Simpan Transaksi
-        </button>
-      </div>
-
-      <!-- KOLOM KANAN: RIWAYAT TRANSAKSI -->
-      <div class="panel">
-        <div class="panel-title">📋 Riwayat Transaksi</div>
-
-        <!-- Tombol Filter -->
-        <div class="filter-row">
-          <button class="filter-btn active" onclick="setFilter('semua', this)">Semua</button>
-          <button class="filter-btn" onclick="setFilter('income', this)">Pemasukan</button>
-          <button class="filter-btn" onclick="setFilter('expense', this)">Pengeluaran</button>
-        </div>
-
-        <!-- List transaksi diisi oleh JavaScript -->
-        <div id="transaction-list">
-          <div class="empty-msg">Belum ada transaksi. Yuk mulai catat! 🌱</div>
-        </div>
-
-        <!-- Grafik per Kategori -->
-        <div class="chart-section" id="chart-section" style="display:none">
-          <div class="panel-title" style="margin-top:20px">📊 Grafik Kategori</div>
-          <div class="chart-bar-wrap" id="chart-bars"></div>
-        </div>
-      </div>
-
-    </div><!-- /two-col -->
-  </div><!-- /container -->
-
-  <!-- Modal lightbox untuk lihat foto bukti diperbesar -->
-  <div class="modal-overlay" id="foto-modal" onclick="closeFotoModal()">
-    <button class="modal-close" onclick="closeFotoModal()">×</button>
-    <img id="modal-img" src="" alt="Bukti transaksi">
+    <div class="summary-card income">
+      <div class="label">📈 Pemasukan</div>
+      <div class="amount green" id="total-income">Rp 0</div>
+    </div>
+    <div class="summary-card expense">
+      <div class="label">📉 Pengeluaran</div>
+      <div class="amount red" id="total-expense">Rp 0</div>
+    </div>
   </div>
 
-  <!-- Notifikasi toast -->
-  <div class="toast" id="toast"></div>
-
-
-  <!-- 
-    ============================================================
-    JAVASCRIPT — LOGIKA APLIKASI
-    ============================================================
-    Semua kode JS ditulis di dalam tag <script>.
-    JS adalah "otak" aplikasi: memproses data, 
-    mengubah tampilan, merespons klik pengguna.
-  -->
-  <script>
-
-    /* 
-      ============================================================
-      DATA & KONSTANTA
-      ============================================================
-      const → variabel yang nilainya tidak bisa diganti (immutable)
-      let   → variabel biasa yang bisa diganti nilainya
-      []    → array (daftar/list)
-      {}    → object (kumpulan properti: nilai)
-    */
-
-    // Daftar kategori berdasarkan tipe transaksi
-    const CATEGORIES = {
-      income:  ['💼 Gaji', '💡 Bonus', '🏪 Usaha', '📦 Investasi', '🎁 Lainnya'],
-      expense: ['🍜 Makanan', '🚗 Transport', '🏠 Tagihan', '🎮 Hiburan', '🛍 Belanja', '💊 Kesehatan', '📚 Pendidikan', '💸 Lainnya']
-    };
-
-    // Array untuk menyimpan semua transaksi
-    // localStorage adalah "memori" browser yang tersimpan walau halaman di-refresh
-    let transactions = JSON.parse(localStorage.getItem('dompetku') || '[]');
-    let activeFilter = 'semua';
-    let fotoBase64 = null; // Menyimpan foto sementara sebelum transaksi disimpan
-
-    /* 
-      ============================================================
-      DRAG & DROP FOTO
-      ============================================================
-      Mendeteksi file yang di-drag ke area upload.
-      preventDefault() → mencegah browser membuka file secara langsung
-    */
-    const uploadArea = document.getElementById('upload-area');
-    uploadArea.addEventListener('dragover', e => {
-      e.preventDefault(); // Wajib agar 'drop' event bisa terpicu
-      uploadArea.classList.add('dragover');
-    });
-    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-    uploadArea.addEventListener('drop', e => {
-      e.preventDefault();
-      uploadArea.classList.remove('dragover');
-      const file = e.dataTransfer.files[0]; // Ambil file pertama yang di-drop
-      if (file && file.type.startsWith('image/')) prosesGambar(file);
-    });
-
-    /* 
-      ============================================================
-      FUNGSI: handleFoto
-      ============================================================
-      Dipanggil saat user memilih file dari input[type=file].
-      event.target.files[0] → file pertama yang dipilih user
-    */
-    function handleFoto(event) {
-      const file = event.target.files[0];
-      if (file) prosesGambar(file);
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: prosesGambar (dengan KOMPRESI OTOMATIS)
-      ============================================================
-      Cara kerja kompresi:
-      1. Baca file asli dengan FileReader
-      2. Load gambar ke elemen <img> sementara
-      3. Buat <canvas> dengan ukuran lebih kecil (max 800px)
-      4. Gambar ulang foto ke canvas yang lebih kecil
-      5. Export canvas sebagai JPEG kualitas 60%
-
-      Canvas = "kanvas digital" bawaan browser untuk manipulasi gambar
-      toDataURL('image/jpeg', 0.6) → export JPEG kualitas 60%
-    */
-    function prosesGambar(file) {
-      const reader = new FileReader();
-      reader.onload = e => {
-
-        // Buat elemen gambar sementara (tidak tampil di layar)
-        const img = new Image();
-        img.onload = () => {
-
-          // Ukuran maksimal hasil kompresi (piksel)
-          const MAX_SIZE = 800;
-          let width  = img.width;
-          let height = img.height;
-
-          // Hitung ulang ukuran proporsional
-          // Contoh: 3000x2000 → 800x533
-          if (width > height) {
-            if (width > MAX_SIZE) { height = Math.round(height * MAX_SIZE / width); width = MAX_SIZE; }
-          } else {
-            if (height > MAX_SIZE) { width = Math.round(width * MAX_SIZE / height); height = MAX_SIZE; }
-          }
-
-          // Buat canvas dengan ukuran yang sudah dikecilkan
-          const canvas = document.createElement('canvas');
-          canvas.width  = width;
-          canvas.height = height;
-
-          // Gambar ulang foto ke canvas
-          // getContext('2d') → ambil "kuas" untuk menggambar di canvas
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Export sebagai JPEG kualitas 60% (nilai 0.0 - 1.0)
-          fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
-
-          // Hitung ukuran sebelum & sesudah kompresi
-          const sebelum = Math.round(file.size / 1024);
-          const sesudah = Math.round(fotoBase64.length * 0.75 / 1024);
-
-          // Tampilkan preview
-          const preview     = document.getElementById('foto-preview');
-          const placeholder = document.getElementById('upload-placeholder');
-          const clearBtn    = document.getElementById('foto-clear');
-          preview.src = fotoBase64;
-          preview.style.display = 'block';
-          placeholder.style.display = 'none';
-          clearBtn.style.display = 'inline-block';
-          clearBtn.textContent = `× Hapus (${sesudah}KB, hemat dari ${sebelum}KB)`;
-
-          showToast(`🗜️ Foto dikompres: ${sebelum}KB → ${sesudah}KB`);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: clearFoto
-      ============================================================
-      Hapus foto yang sudah dipilih, reset tampilan upload area.
-      event.stopPropagation() → mencegah klik tombol ini 
-      memicu klik pada elemen induknya (upload-area)
-    */
-    function clearFoto(event) {
-      event.stopPropagation();
-      fotoBase64 = null;
-      document.getElementById('foto-input').value = '';
-      document.getElementById('foto-preview').style.display = 'none';
-      document.getElementById('foto-preview').src = '';
-      document.getElementById('upload-placeholder').style.display = 'flex';
-      document.getElementById('foto-clear').style.display = 'none';
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: openFotoModal & closeFotoModal
-      ============================================================
-      Tampilkan/sembunyikan modal lightbox saat foto diklik.
-    */
-    function openFotoModal(src) {
-      document.getElementById('modal-img').src = src;
-      document.getElementById('foto-modal').classList.add('open');
-    }
-    function closeFotoModal() {
-      document.getElementById('foto-modal').classList.remove('open');
-    }
-
-    // Tutup modal jika tekan tombol Escape di keyboard
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeFotoModal();
-    });
-
-    /* ============================================================ */
-
-    function formatRupiah(angka) {
-      return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: simpanData
-      ============================================================
-      Menyimpan array transactions ke localStorage.
-      JSON.stringify() → Ubah object/array JavaScript jadi teks JSON
-      agar bisa disimpan di localStorage (hanya terima teks).
-    */
-    function simpanData() {
-      localStorage.setItem('dompetku', JSON.stringify(transactions));
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: updateCategories
-      ============================================================
-      Isi ulang dropdown kategori berdasarkan tipe yang dipilih.
-      Dipanggil setiap kali dropdown "Tipe" berubah.
-    */
-    function updateCategories() {
-      const type = document.getElementById('type').value;
-      // document.getElementById() → Cari elemen HTML berdasarkan id-nya
-      
-      const catEl = document.getElementById('category');
-      catEl.innerHTML = ''; // Kosongkan isi dropdown dulu
-      
-      // Loop setiap kategori dan buat <option> baru
-      // forEach → iterasi setiap item dalam array
-      CATEGORIES[type].forEach(cat => {
-        const opt = document.createElement('option'); // Buat elemen baru
-        opt.value = cat;
-        opt.textContent = cat;
-        catEl.appendChild(opt); // Tambahkan ke dropdown
-      });
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: addTransaction
-      ============================================================
-      Dipanggil saat tombol "Simpan Transaksi" diklik.
-      Membaca nilai input, validasi, lalu simpan ke array.
-    */
-    function addTransaction() {
-      // Ambil nilai dari setiap field input
-      const type   = document.getElementById('type').value;
-      const desc   = document.getElementById('desc').value.trim(); // .trim() hapus spasi di tepi
-      const amount = parseFloat(document.getElementById('amount').value); // parseFloat → ubah string ke angka desimal
-      const cat    = document.getElementById('category').value;
-      const date   = document.getElementById('date').value;
-
-      // VALIDASI — cek apakah semua field sudah diisi & valid
-      if (!desc || !amount || amount <= 0 || !date) {
-        showToast('⚠️ Lengkapi semua field dengan benar!');
-        return; // Hentikan fungsi jika ada yang kosong
-      }
-
-      // Buat object transaksi baru
-      const newTx = {
-        id:     Date.now(),
-        type,
-        desc,
-        amount,
-        cat,
-        date,
-        foto: fotoBase64  // Simpan foto base64 (null jika tidak ada)
-      };
-
-      transactions.unshift(newTx);
-      simpanData();
-      render();
-      clearForm();
-      clearFoto({ stopPropagation: () => {} }); // Reset foto setelah simpan
-      showToast('✅ Transaksi berhasil ditambahkan!');
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: deleteTransaction
-      ============================================================
-      Hapus transaksi berdasarkan id.
-      filter() → buat array baru, hanya berisi item yang lolos kondisi
-      tx.id !== id berarti: simpan semua KECUALI yang id-nya cocok
-    */
-    function deleteTransaction(id) {
-      transactions = transactions.filter(tx => tx.id !== id);
-      simpanData();
-      render();
-      showToast('🗑️ Transaksi dihapus.');
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: setFilter
-      ============================================================
-      Ganti filter aktif dan perbarui tampilan tombol filter.
-      el = elemen button yang diklik (dikirim lewat onclick)
-    */
-    function setFilter(filter, el) {
-      activeFilter = filter;
-      
-      // Hapus class 'active' dari semua tombol filter
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      // querySelectorAll() → ambil SEMUA elemen yang cocok selector
-      // classList.remove() → hapus sebuah class dari elemen
-      
-      el.classList.add('active'); // Tambah 'active' ke tombol yang diklik
-      renderList(); // Perbarui list transaksi
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: updateSummary
-      ============================================================
-      Hitung total saldo, pemasukan, pengeluaran lalu tampilkan.
-      reduce() → "lipat" array menjadi satu nilai (seperti menjumlah)
-    */
-    function updateSummary() {
-      // Jumlahkan semua pemasukan
-      const totalIncome = transactions
-        .filter(tx => tx.type === 'income')
-        .reduce((sum, tx) => sum + tx.amount, 0);
-        // reduce: mulai dari 0, tambahkan tx.amount setiap iterasi
-        // sum = akumulator, tx = item saat ini
-
-      // Jumlahkan semua pengeluaran
-      const totalExpense = transactions
-        .filter(tx => tx.type === 'expense')
-        .reduce((sum, tx) => sum + tx.amount, 0);
-
-      const balance = totalIncome - totalExpense;
-
-      // Perbarui teks di tampilan
-      document.getElementById('total-balance').textContent = formatRupiah(balance);
-      document.getElementById('total-income').textContent  = formatRupiah(totalIncome);
-      document.getElementById('total-expense').textContent = formatRupiah(totalExpense);
-    }
-
-    /* 
-      ============================================================
-      FUNGSI: renderList
-      ============================================================
-      Tampilkan daftar transaksi (bisa difilter).
-      Template literal (`...${variabel}...`) → cara mudah buat HTML string
-      innerHTML → langsung set konten HTML dari sebuah elemen
-    */
-    function renderList() {
-      const listEl = document.getElementById('transaction-list');
-
-      // Filter data sesuai pilihan aktif
-      const filtered = activeFilter === 'semua'
-        ? transactions                                      // Tampilkan semua
-        : transactions.filter(tx => tx.type === activeFilter); // Filter by type
-
-      if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="empty-msg">Belum ada transaksi di sini 🌱</div>';
-        return;
-      }
-
-      // Buat HTML untuk setiap transaksi menggunakan .map() + .join()
-      // map()  → ubah setiap item array menjadi sesuatu yang lain
-      // join() → gabungkan array string menjadi satu string
-      listEl.innerHTML = filtered.map(tx => `
-        <div class="tx-item">
-          <div class="tx-icon ${tx.type}">
-            ${tx.type === 'income' ? '📈' : '📉'}
+  <!-- FORM + RIWAYAT -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">＋ Tambah Transaksi</div>
+      <div class="form-group">
+        <label for="type">Tipe</label>
+        <select id="type">
+          <option value="income">📈 Pemasukan</option>
+          <option value="expense">📉 Pengeluaran</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="desc">Keterangan</label>
+        <input type="text" id="desc" placeholder="Contoh: Gaji bulan ini"/>
+      </div>
+      <div class="form-group">
+        <label for="amount">Jumlah (Rp)</label>
+        <input type="number" id="amount" placeholder="0" min="1"/>
+      </div>
+      <div class="form-group">
+        <label for="category">Kategori</label>
+        <select id="category"></select>
+      </div>
+      <div class="form-group">
+        <label for="date">Tanggal</label>
+        <input type="date" id="date"/>
+      </div>
+      <div class="form-group">
+        <label>Foto Bukti <span style="color:var(--muted);font-size:.7rem;text-transform:none;letter-spacing:0">(opsional)</span></label>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('foto-input').click()">
+          <div id="upload-placeholder">
+            <div style="font-size:1.6rem">📎</div>
+            <div style="font-size:.8rem;color:var(--muted);margin-top:4px">Klik atau drag foto ke sini</div>
           </div>
-          <div class="tx-info">
-            <div class="tx-desc">${tx.desc}</div>
-            <div class="tx-cat">${tx.cat} · ${formatDate(tx.date)}</div>
-          </div>
-          ${tx.foto ? `<img class="tx-thumb" src="${tx.foto}" alt="bukti" onclick="openFotoModal('${tx.foto}')" title="Lihat bukti">` : ''}
-          <div class="tx-amount ${tx.type}">
-            ${tx.type === 'income' ? '+' : '-'}${formatRupiah(tx.amount)}
-          </div>
-          <button class="tx-del" onclick="deleteTransaction(${tx.id})" title="Hapus">×</button>
+          <img id="foto-preview" style="display:none;max-width:100%;max-height:120px;border-radius:8px;object-fit:cover;"/>
+          <button id="foto-clear" onclick="clearFoto(event)" style="display:none">× Hapus foto</button>
         </div>
-      `).join('');
-      // Template literal: backtick (`) membungkus HTML dengan ${} untuk variabel
+        <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="handleFoto(event)"/>
+      </div>
+      <button class="btn btn-primary" onclick="addTransaction()">Simpan Transaksi</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📋 Riwayat Transaksi</div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('semua',this)">Semua</button>
+        <button class="filter-btn" onclick="setFilter('income',this)">Pemasukan</button>
+        <button class="filter-btn" onclick="setFilter('expense',this)">Pengeluaran</button>
+      </div>
+      <div id="transaction-list">
+        <div class="empty-msg">Belum ada transaksi. Yuk mulai catat! 🌱</div>
+      </div>
+      <div class="chart-section" id="chart-section" style="display:none">
+        <div class="panel-title" style="margin-top:20px">📊 Grafik Kategori</div>
+        <div class="chart-bar-wrap" id="chart-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       GRAFIK GARIS
+       Mirip chart Google Sheets: ada judul, legend, sumbu X/Y,
+       grid horizontal, dan 3 garis berwarna.
+       Tab di pojok kanan untuk filter: Minggu / Bulan / Tahun
+  ============================================================ -->
+  <div class="line-chart-panel" id="line-chart-panel" style="display:none">
+    <div class="line-chart-header">
+      <div class="chart-title-text">📈 Grafik Keuangan</div>
+      <!-- Tab periode: filter data yang ditampilkan di grafik -->
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="setChartPeriod('minggu',this)">Minggu</button>
+        <button class="chart-tab" onclick="setChartPeriod('bulan',this)">Bulan</button>
+        <button class="chart-tab" onclick="setChartPeriod('tahun',this)">Tahun</button>
+      </div>
+    </div>
+    <!-- Legend -->
+    <div class="chart-legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background:var(--green)"></div>
+        <span style="color:var(--green)">Pemasukan</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:var(--red)"></div>
+        <span style="color:var(--red)">Pengeluaran</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:var(--blue)"></div>
+        <span style="color:var(--blue)">Saldo</span>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="lineChart" height="260"></canvas>
+    </div>
+    <div class="chart-empty" id="chart-empty" style="display:none">
+      Tambahkan transaksi di minimal 2 tanggal berbeda untuk melihat grafik 📊
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PANEL PEMASUKAN RUTIN (OPSIONAL)
+       Daftarkan pemasukan yang otomatis masuk ke saldo
+       sesuai jadwal: mingguan, bulanan, atau tahunan.
+  ============================================================ -->
+  <div class="recurring-panel">
+    <div class="panel-title">🔁 Pemasukan Rutin <span style="font-size:.75rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">(opsional)</span></div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+      Daftarkan pemasukan rutin (gaji, uang saku, dll) agar otomatis masuk ke saldo tanpa input manual setiap kali.
+    </p>
+
+    <!-- Daftar pemasukan rutin -->
+    <div class="recurring-list" id="recurring-list">
+      <div class="empty-msg" id="rec-empty">Belum ada pemasukan rutin. Tambahkan di bawah! 🔁</div>
+    </div>
+
+    <!-- Tombol toggle form -->
+    <button class="btn btn-outline" onclick="toggleRecForm()" id="rec-toggle-btn">＋ Tambah Pemasukan Rutin</button>
+
+    <!-- Form tambah rutin (tersembunyi awalnya) -->
+    <div class="rec-form" id="rec-form" style="display:none">
+      <div class="rec-form-grid">
+        <div class="form-group">
+          <label>Nama</label>
+          <input type="text" id="rec-name" placeholder="Contoh: Gaji"/>
+        </div>
+        <div class="form-group">
+          <label>Jumlah (Rp)</label>
+          <input type="number" id="rec-amount" placeholder="0" min="1"/>
+        </div>
+        <div class="form-group">
+          <label>Frekuensi</label>
+          <!-- Pilihan: mingguan, bulanan, tahunan -->
+          <select id="rec-freq">
+            <option value="weekly">📅 Setiap Minggu</option>
+            <option value="monthly" selected>📅 Setiap Bulan</option>
+            <option value="yearly">📅 Setiap Tahun</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mulai Tanggal</label>
+          <input type="date" id="rec-start"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addRecurring()">Simpan Pemasukan Rutin</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="modal-overlay" id="foto-modal" onclick="closeFotoModal()">
+  <button class="modal-close" onclick="closeFotoModal()">×</button>
+  <img id="modal-img" src="" alt="Bukti"/>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA & SETUP
+============================================================ */
+const CATEGORIES = {
+  income:  ['💼 Gaji','💡 Bonus','🏪 Usaha','📦 Investasi','🎁 Lainnya'],
+  expense: ['🍜 Makanan','🚗 Transport','🏠 Tagihan','🎮 Hiburan','🛍 Belanja','💊 Kesehatan','📚 Pendidikan','💸 Lainnya']
+};
+
+let transactions = JSON.parse(localStorage.getItem('dompetku') || '[]');
+let recurringList = JSON.parse(localStorage.getItem('dompetku-recurring') || '[]');
+/*
+  recurringList menyimpan daftar pemasukan rutin.
+  Setiap item: { id, name, amount, freq, startDate, lastRun }
+  - freq: 'weekly' | 'monthly' | 'yearly'
+  - lastRun: tanggal terakhir pemasukan ini dijalankan (string YYYY-MM-DD)
+*/
+
+let activeFilter   = 'semua';
+let chartPeriod    = 'minggu'; // Periode aktif grafik garis
+let fotoBase64     = null;
+let recFormOpen    = false;
+
+/* ============================================================
+   PEMASUKAN RUTIN — CEK & JALANKAN OTOMATIS
+   ============================================================
+   Setiap kali halaman dibuka, fungsi ini mengecek apakah
+   ada pemasukan rutin yang sudah jatuh tempo.
+   Jika iya, otomatis ditambahkan ke transaksi.
+
+   Logika pengecekan per frekuensi:
+   - weekly  → selisih hari >= 7
+   - monthly → bulan/tahun berbeda
+   - yearly  → tahun berbeda
+*/
+function cekRutin() {
+  const today = new Date();
+  today.setHours(0,0,0,0); // Hilangkan komponen waktu
+  const todayStr = toDateStr(today);
+  let ada = false;
+
+  recurringList.forEach(rec => {
+    const start    = new Date(rec.startDate);
+    const lastRun  = rec.lastRun ? new Date(rec.lastRun) : null;
+    // Referensi = lastRun jika pernah jalan, kalau tidak = startDate
+    const ref      = lastRun || start;
+    ref.setHours(0,0,0,0);
+
+    let jatuhTempo = false;
+
+    if (rec.freq === 'weekly') {
+      // Selisih dalam hari
+      const selisihHari = Math.floor((today - ref) / (1000*60*60*24));
+      jatuhTempo = selisihHari >= 7;
+    } else if (rec.freq === 'monthly') {
+      // Beda bulan atau beda tahun
+      jatuhTempo = (today.getMonth() !== ref.getMonth()) ||
+                   (today.getFullYear() !== ref.getFullYear());
+    } else if (rec.freq === 'yearly') {
+      jatuhTempo = today.getFullYear() !== ref.getFullYear();
     }
 
-    /* 
-      ============================================================
-      FUNGSI: renderChart
-      ============================================================
-      Buat grafik batang sederhana berdasarkan kategori.
-      Menggunakan objek sebagai "dictionary" untuk menghitung total per kategori.
-    */
-    function renderChart() {
-      const chartSection = document.getElementById('chart-section');
-      const chartBars    = document.getElementById('chart-bars');
+    // Pastikan today >= startDate dan belum dijalankan hari ini
+    const sudahMulai  = today >= start;
+    const belumHariIni = rec.lastRun !== todayStr;
 
-      if (transactions.length === 0) {
-        chartSection.style.display = 'none';
-        return;
-      }
-      chartSection.style.display = 'block';
-
-      // Hitung total per kategori
-      const totals = {}; // Object kosong sebagai "map" kategori → jumlah
-      transactions.forEach(tx => {
-        if (!totals[tx.cat]) totals[tx.cat] = { type: tx.type, total: 0 };
-        totals[tx.cat].total += tx.amount;
+    if (jatuhTempo && sudahMulai && belumHariIni) {
+      // Tambahkan sebagai transaksi otomatis
+      transactions.unshift({
+        id:   Date.now() + Math.random(), // Unik walau dijalankan cepat berurutan
+        type: 'income',
+        desc: rec.name + ' (otomatis)',
+        amount: rec.amount,
+        cat:  '💼 Gaji',
+        date: todayStr,
+        foto: null,
+        isRecurring: true // Tandai sebagai pemasukan rutin
       });
-
-      // Cari nilai maksimal untuk skala grafik (100%)
-      const maxVal = Math.max(...Object.values(totals).map(v => v.total));
-      // Math.max(...arr) → nilai terbesar dari array
-      // Object.values()  → ambil semua nilai dari object
-
-      // Render setiap baris grafik
-      chartBars.innerHTML = Object.entries(totals)
-        // Object.entries() → ubah object jadi array [key, value]
-        .sort((a, b) => b[1].total - a[1].total) // Urutkan dari besar ke kecil
-        .slice(0, 6) // Ambil 6 teratas saja
-        .map(([cat, data]) => {
-          const pct = (data.total / maxVal * 100).toFixed(0); // Persen lebar batang
-          return `
-            <div class="chart-row">
-              <div class="chart-label">${cat.split(' ').slice(1).join(' ')}</div>
-              <div class="chart-track">
-                <div class="chart-fill ${data.type}" style="width:${pct}%"></div>
-              </div>
-              <div class="chart-val ${data.type === 'income' ? 'green' : 'red'}" 
-                   style="color:${data.type === 'income' ? 'var(--green)' : 'var(--red)'}">
-                ${formatRupiah(data.total)}
-              </div>
-            </div>`;
-        }).join('');
+      rec.lastRun = todayStr; // Catat sudah dijalankan hari ini
+      ada = true;
     }
+  });
 
-    /* 
-      ============================================================
-      FUNGSI PENDUKUNG
-      ============================================================
-    */
+  if (ada) {
+    simpanData();
+    simpanRutin();
+    showToast('🔁 Pemasukan rutin otomatis ditambahkan!');
+  }
+}
 
-    // Format tanggal dari "2024-01-15" menjadi "15 Jan 2024"
-    function formatDate(dateStr) {
-      const d = new Date(dateStr); // Ubah string ke objek Date
-      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+/* Helper: ubah objek Date → string "YYYY-MM-DD" */
+function toDateStr(d) {
+  return d.toISOString().split('T')[0];
+}
+
+/* ============================================================
+   DRAG & DROP FOTO
+============================================================ */
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) prosesGambar(f);
+});
+function handleFoto(e) { if (e.target.files[0]) prosesGambar(e.target.files[0]); }
+
+/* Kompresi foto via Canvas */
+function prosesGambar(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h*MAX/w); w = MAX; } }
+      else        { if (h > MAX) { w = Math.round(w*MAX/h); h = MAX; } }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      fotoBase64 = cv.toDataURL('image/jpeg', 0.6);
+      const sb = Math.round(file.size/1024), ss = Math.round(fotoBase64.length*.75/1024);
+      document.getElementById('foto-preview').src = fotoBase64;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('upload-placeholder').style.display = 'none';
+      const cb = document.getElementById('foto-clear');
+      cb.style.display = 'inline-block';
+      cb.textContent = `× Hapus (${ss}KB, hemat dari ${sb}KB)`;
+      showToast(`🗜️ Dikompres: ${sb}KB → ${ss}KB`);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearFoto(e) {
+  e.stopPropagation(); fotoBase64 = null;
+  document.getElementById('foto-input').value = '';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-preview').src = '';
+  document.getElementById('upload-placeholder').style.display = 'flex';
+  document.getElementById('foto-clear').style.display = 'none';
+}
+function openFotoModal(src) { document.getElementById('modal-img').src=src; document.getElementById('foto-modal').classList.add('open'); }
+function closeFotoModal()   { document.getElementById('foto-modal').classList.remove('open'); }
+
+/* ============================================================
+   FORMAT & SIMPAN
+============================================================ */
+function formatRupiah(n) { return 'Rp '+new Intl.NumberFormat('id-ID').format(Math.round(n)); }
+function formatDate(s)   { return new Date(s).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }
+function simpanData()    { localStorage.setItem('dompetku', JSON.stringify(transactions)); }
+function simpanRutin()   { localStorage.setItem('dompetku-recurring', JSON.stringify(recurringList)); }
+
+/* ============================================================
+   FORM TRANSAKSI
+============================================================ */
+function updateCategories() {
+  const type = document.getElementById('type').value;
+  const el   = document.getElementById('category');
+  el.innerHTML = '';
+  CATEGORIES[type].forEach(c => { const o = document.createElement('option'); o.value = o.textContent = c; el.appendChild(o); });
+}
+
+function addTransaction() {
+  const type   = document.getElementById('type').value;
+  const desc   = document.getElementById('desc').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const cat    = document.getElementById('category').value;
+  const date   = document.getElementById('date').value;
+  if (!desc || !amount || amount <= 0 || !date) { showToast('⚠️ Lengkapi semua field!'); return; }
+  transactions.unshift({ id:Date.now(), type, desc, amount, cat, date, foto:fotoBase64 });
+  simpanData(); render();
+  document.getElementById('desc').value = '';
+  document.getElementById('amount').value = '';
+  clearFoto({ stopPropagation:()=>{} });
+  showToast('✅ Transaksi berhasil ditambahkan!');
+}
+
+function deleteTransaction(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  simpanData(); render();
+  showToast('🗑️ Transaksi dihapus.');
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+/* ============================================================
+   PEMASUKAN RUTIN — FORM & KELOLA
+============================================================ */
+function toggleRecForm() {
+  recFormOpen = !recFormOpen;
+  document.getElementById('rec-form').style.display = recFormOpen ? 'block' : 'none';
+  document.getElementById('rec-toggle-btn').textContent = recFormOpen ? '× Tutup' : '＋ Tambah Pemasukan Rutin';
+}
+
+function addRecurring() {
+  const name   = document.getElementById('rec-name').value.trim();
+  const amount = parseFloat(document.getElementById('rec-amount').value);
+  const freq   = document.getElementById('rec-freq').value;
+  const start  = document.getElementById('rec-start').value;
+  if (!name || !amount || amount <= 0 || !start) { showToast('⚠️ Lengkapi semua field rutin!'); return; }
+
+  recurringList.push({ id:Date.now(), name, amount, freq, startDate:start, lastRun:null });
+  simpanRutin();
+  renderRecurring();
+  // Reset form
+  document.getElementById('rec-name').value   = '';
+  document.getElementById('rec-amount').value = '';
+  document.getElementById('rec-start').value  = '';
+  toggleRecForm();
+  showToast('✅ Pemasukan rutin ditambahkan!');
+}
+
+function deleteRecurring(id) {
+  recurringList = recurringList.filter(r => r.id !== id);
+  simpanRutin();
+  renderRecurring();
+  showToast('🗑️ Pemasukan rutin dihapus.');
+}
+
+/* Label frekuensi untuk ditampilkan */
+function labelFreq(f) {
+  return { weekly:'Setiap Minggu', monthly:'Setiap Bulan', yearly:'Setiap Tahun' }[f] || f;
+}
+
+function renderRecurring() {
+  const el    = document.getElementById('recurring-list');
+  const empty = document.getElementById('rec-empty');
+  if (!recurringList.length) {
+    el.innerHTML = '';
+    el.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  // Tampilkan setiap item rutin
+  el.innerHTML = recurringList.map(rec => {
+    const sudahJalan = rec.lastRun !== null;
+    return `<div class="rec-item">
+      <div class="tx-icon recurring">🔁</div>
+      <div class="rec-info">
+        <div class="rec-name">${rec.name}
+          <span class="rec-status ${sudahJalan?'ok':'pending'}">${sudahJalan?'✓ Aktif':'Menunggu'}</span>
+        </div>
+        <div class="rec-detail">${labelFreq(rec.freq)} · Mulai ${formatDate(rec.startDate)}${rec.lastRun?' · Terakhir '+formatDate(rec.lastRun):''}</div>
+      </div>
+      <div class="rec-amount">+${formatRupiah(rec.amount)}</div>
+      <button class="rec-del" onclick="deleteRecurring(${rec.id})" title="Hapus">×</button>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   UPDATE SUMMARY (SALDO, PEMASUKAN, PENGELUARAN)
+============================================================ */
+function updateSummary() {
+  const inc = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('total-balance').textContent = formatRupiah(inc-exp);
+  document.getElementById('total-income').textContent  = formatRupiah(inc);
+  document.getElementById('total-expense').textContent = formatRupiah(exp);
+}
+
+/* ============================================================
+   RENDER LIST TRANSAKSI
+============================================================ */
+function renderList() {
+  const el = document.getElementById('transaction-list');
+  const filtered = activeFilter==='semua' ? transactions : transactions.filter(t=>t.type===activeFilter);
+  if (!filtered.length) { el.innerHTML='<div class="empty-msg">Belum ada transaksi di sini 🌱</div>'; return; }
+  el.innerHTML = filtered.map(tx=>`
+    <div class="tx-item">
+      <div class="tx-icon ${tx.isRecurring?'recurring':tx.type}">${tx.isRecurring?'🔁':tx.type==='income'?'📈':'📉'}</div>
+      <div class="tx-info">
+        <div class="tx-desc">${tx.desc}${tx.isRecurring?'<span class="badge-recurring">rutin</span>':''}</div>
+        <div class="tx-cat">${tx.cat} · ${formatDate(tx.date)}</div>
+      </div>
+      ${tx.foto?`<img class="tx-thumb" src="${tx.foto}" alt="bukti" onclick="openFotoModal('${tx.foto}')" title="Lihat bukti">`:''}
+      <div class="tx-amount ${tx.type}">${tx.type==='income'?'+':'-'}${formatRupiah(tx.amount)}</div>
+      <button class="tx-del" onclick="deleteTransaction(${tx.id})" title="Hapus">×</button>
+    </div>`).join('');
+}
+
+/* ============================================================
+   GRAFIK BATANG KATEGORI
+============================================================ */
+function renderChart() {
+  const sec = document.getElementById('chart-section');
+  if (!transactions.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  const totals = {};
+  transactions.forEach(tx => {
+    if (!totals[tx.cat]) totals[tx.cat]={type:tx.type,total:0};
+    totals[tx.cat].total += tx.amount;
+  });
+  const maxV = Math.max(...Object.values(totals).map(v=>v.total));
+  document.getElementById('chart-bars').innerHTML = Object.entries(totals)
+    .sort((a,b)=>b[1].total-a[1].total).slice(0,6)
+    .map(([cat,d])=>`<div class="chart-row">
+      <div class="chart-label">${cat.split(' ').slice(1).join(' ')}</div>
+      <div class="chart-track"><div class="chart-fill ${d.type}" style="width:${(d.total/maxV*100).toFixed(0)}%"></div></div>
+      <div class="chart-val" style="color:${d.type==='income'?'var(--green)':'var(--red)'}">${formatRupiah(d.total)}</div>
+    </div>`).join('');
+}
+
+/* ============================================================
+   GRAFIK GARIS — renderLineChart()
+   ============================================================
+   Mirip Google Sheets / chart biasa:
+   - Sumbu Y di kiri dengan label nilai (disingkat: jt, rb)
+   - Sumbu X di bawah dengan label tanggal/bulan
+   - Grid garis horizontal abu-abu
+   - 3 garis berwarna: hijau, merah, biru
+   - Titik bulat di setiap data point
+   - Filter periode: Minggu (7 hari terakhir), Bulan (30 hari), Tahun (12 bulan)
+
+   Konsep canvas yang dipakai:
+   ctx.beginPath()          → mulai jalur baru
+   ctx.moveTo(x, y)         → pindah ke titik tanpa garis
+   ctx.lineTo(x, y)         → tarik garis ke titik
+   ctx.stroke()             → gambar garis
+   ctx.arc(x,y,r,0,PI*2)   → gambar lingkaran
+   ctx.fill()               → isi warna
+   ctx.fillText(txt, x, y) → tulis teks
+============================================================ */
+function setChartPeriod(p, el) {
+  chartPeriod = p;
+  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderLineChart();
+}
+
+function renderLineChart() {
+  const panel  = document.getElementById('line-chart-panel');
+  const canvas = document.getElementById('lineChart');
+  const empty  = document.getElementById('chart-empty');
+
+  if (!transactions.length) { panel.style.display='none'; return; }
+  panel.style.display = 'block';
+
+  /* -- STEP 1: Tentukan rentang tanggal berdasarkan periode -- */
+  const today = new Date(); today.setHours(0,0,0,0);
+  let labels   = []; // Array string label untuk sumbu X
+  let byLabel  = {}; // { label: { income:0, expense:0 } }
+
+  if (chartPeriod === 'minggu') {
+    // 7 hari terakhir — sumbu X = nama hari (Sen, Sel, ...)
+    const HARI = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    for (let i=6; i>=0; i--) {
+      const d = new Date(today); d.setDate(today.getDate()-i);
+      const lbl = HARI[d.getDay()]+' '+d.getDate();
+      labels.push(lbl);
+      byLabel[lbl] = { income:0, expense:0, dateStr: toDateStr(d) };
     }
-
-    // Kosongkan form setelah simpan
-    function clearForm() {
-      document.getElementById('desc').value   = '';
-      document.getElementById('amount').value = '';
-      // Tanggal & kategori dibiarkan untuk kemudahan input berikutnya
-    }
-
-    // Tampilkan notifikasi singkat (toast)
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');            // Tambah class 'show' → opacity: 1
-      setTimeout(() => {
-        toast.classList.remove('show');       // Hapus class setelah 2.5 detik
-      }, 2500);
-      // setTimeout(fungsi, waktu_ms) → jalankan fungsi setelah X milidetik
-    }
-
-    // Fungsi utama: panggil semua render sekaligus
-    function render() {
-      updateSummary();
-      renderList();
-      renderChart();
-    }
-
-    /* 
-      ============================================================
-      INISIALISASI (Dijalankan Saat Halaman Pertama Kali Dibuka)
-      ============================================================
-    */
-
-    // Set tanggal hari ini sebagai default di input date
-    document.getElementById('date').valueAsDate = new Date();
-    // new Date() → objek tanggal & waktu saat ini
-
-    // Isi kategori sesuai tipe default (pemasukan)
-    updateCategories();
-
-    // Dengarkan perubahan pada dropdown Tipe → perbarui kategori
-    document.getElementById('type').addEventListener('change', updateCategories);
-    // addEventListener('change', fungsi) → pantau event 'change' pada elemen
-
-    // Tampilkan data yang sudah ada (dari localStorage)
-    render();
-
-    // Izinkan tombol Enter untuk submit form
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') addTransaction();
-      // e.key → tombol yang ditekan
+    // Kelompokkan transaksi ke label hari
+    transactions.forEach(tx => {
+      const found = Object.values(byLabel).find(b => b.dateStr === tx.date);
+      if (found) found[tx.type] += tx.amount;
     });
 
-  </script>
+  } else if (chartPeriod === 'bulan') {
+    // 30 hari terakhir, dikelompokkan per 3 hari agar label tidak penuh
+    // Buat 10 titik (setiap 3 hari)
+    for (let i=9; i>=0; i--) {
+      const d = new Date(today); d.setDate(today.getDate()-(i*3));
+      const lbl = d.getDate()+'/'+(d.getMonth()+1);
+      labels.push(lbl);
+      byLabel[lbl] = { income:0, expense:0, startDate: toDateStr(d) };
+    }
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      // Cari bucket yang paling dekat (mundur)
+      for (let i=labels.length-1; i>=0; i--) {
+        const bucketDate = new Date(byLabel[labels[i]].startDate);
+        if (txDate >= bucketDate) {
+          byLabel[labels[i]][tx.type] += tx.amount;
+          break;
+        }
+      }
+    });
 
+  } else { // tahun
+    // 12 bulan terakhir — sumbu X = nama bulan (Jan, Feb, ...)
+    const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    for (let i=11; i>=0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+      const lbl = BULAN[d.getMonth()]+' '+d.getFullYear().toString().slice(2);
+      labels.push(lbl);
+      byLabel[lbl] = { income:0, expense:0, month: d.getMonth(), year: d.getFullYear() };
+    }
+    transactions.forEach(tx => {
+      const d   = new Date(tx.date);
+      const m   = d.getMonth(), y = d.getFullYear();
+      const lbl = labels.find(l => byLabel[l].month===m && byLabel[l].year===y);
+      if (lbl) byLabel[lbl][tx.type] += tx.amount;
+    });
+  }
+
+  /* -- STEP 2: Hitung saldo kumulatif per titik -- */
+  let saldo = 0;
+  const dataIn = [], dataEx = [], dataSaldo = [];
+  labels.forEach(lbl => {
+    dataIn.push(byLabel[lbl].income);
+    dataEx.push(byLabel[lbl].expense);
+    saldo += byLabel[lbl].income - byLabel[lbl].expense;
+    dataSaldo.push(saldo);
+  });
+
+  // Cek ada data atau tidak (semua 0 = belum ada)
+  const adaData = dataIn.some(v=>v>0) || dataEx.some(v=>v>0);
+  if (!adaData && chartPeriod==='minggu') {
+    canvas.style.display='none'; empty.style.display='block'; return;
+  }
+  canvas.style.display='block'; empty.style.display='none';
+
+  /* -- STEP 3: Setup canvas -- */
+  const W = canvas.offsetWidth || 760;
+  const H = 260;
+  canvas.width  = W * window.devicePixelRatio; // Retina/HiDPI support
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width  = W+'px';
+  canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio); // Skala untuk layar retina
+  ctx.clearRect(0, 0, W, H);
+
+  // Padding (ruang tepi untuk label)
+  const pL=68, pR=24, pT=24, pB=44;
+  const cW = W-pL-pR; // Lebar area grafik
+  const cH = H-pT-pB; // Tinggi area grafik
+
+  /* -- Skala Y -- */
+  const allVals = [...dataIn, ...dataEx, ...dataSaldo];
+  const maxV = Math.max(...allVals, 1);
+  const minV = Math.min(...allVals, 0);
+  const range = maxV - minV || 1;
+
+  // Nilai → piksel Y (Y=0 di atas, jadi dibalik)
+  const sY = v => pT + cH - ((v-minV)/range * cH);
+  // Index → piksel X
+  const sX = i => pL + (i/(labels.length-1||1)) * cW;
+
+  /* -- STEP 4: Gambar background area grafik -- */
+  ctx.fillStyle = 'rgba(30,30,36,0.4)';
+  ctx.fillRect(pL, pT, cW, cH);
+
+  /* -- STEP 5: Garis grid horizontal (5 garis) -- */
+  const gridCount = 5;
+  ctx.setLineDash([4, 4]); // Garis putus-putus
+  for (let i=0; i<=gridCount; i++) {
+    const y   = pT + (cH/gridCount)*i;
+    const val = maxV - (range/gridCount)*i;
+
+    // Garis grid
+    ctx.strokeStyle = i===gridCount ? '#3a3a46' : '#2a2a38';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(W-pR, y); ctx.stroke();
+
+    // Label nilai Y (kiri)
+    ctx.fillStyle  = '#7a7880';
+    ctx.font       = '11px DM Sans, sans-serif';
+    ctx.textAlign  = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(singkat(val), pL-8, y);
+  }
+  ctx.setLineDash([]); // Reset garis putus-putus
+
+  /* -- STEP 6: Garis vertikal tipis di setiap titik data -- */
+  labels.forEach((_, i) => {
+    ctx.strokeStyle = '#22222c';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(sX(i), pT); ctx.lineTo(sX(i), pT+cH); ctx.stroke();
+  });
+
+  /* -- STEP 7: Label sumbu X (bawah) -- */
+  ctx.fillStyle    = '#7a7880';
+  ctx.font         = '11px DM Sans, sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  // Tampilkan max 8 label agar tidak tumpang tindih
+  const xStep = Math.ceil(labels.length/8);
+  labels.forEach((lbl, i) => {
+    if (i%xStep===0 || i===labels.length-1)
+      ctx.fillText(lbl, sX(i), pT+cH+10);
+  });
+
+  /* -- STEP 8: Fungsi gambar garis + titik + area fill -- */
+  function drawLine(data, color, fillColor) {
+    if (!data.length) return;
+
+    // Area fill di bawah garis (transparan)
+    ctx.beginPath();
+    data.forEach((v,i) => i===0 ? ctx.moveTo(sX(i),sY(v)) : ctx.lineTo(sX(i),sY(v)));
+    ctx.lineTo(sX(data.length-1), pT+cH); // Titik kanan bawah
+    ctx.lineTo(sX(0), pT+cH);             // Titik kiri bawah
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Garis utama
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2.5;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    data.forEach((v,i) => i===0 ? ctx.moveTo(sX(i),sY(v)) : ctx.lineTo(sX(i),sY(v)));
+    ctx.stroke();
+
+    // Titik data (lingkaran)
+    data.forEach((v,i) => {
+      // Lingkaran luar (warna garis)
+      ctx.beginPath(); ctx.arc(sX(i),sY(v),4,0,Math.PI*2);
+      ctx.fillStyle=color; ctx.fill();
+      // Titik dalam (warna gelap = efek donat)
+      ctx.beginPath(); ctx.arc(sX(i),sY(v),2,0,Math.PI*2);
+      ctx.fillStyle='#16161a'; ctx.fill();
+    });
+  }
+
+  // Gambar 3 garis dengan warna berbeda
+  drawLine(dataSaldo, '#5b9cf6', 'rgba(91,156,246,0.06)');   // Biru  = saldo
+  drawLine(dataEx,    '#f16060', 'rgba(241,96,96,0.06)');    // Merah = pengeluaran
+  drawLine(dataIn,    '#3ecf74', 'rgba(62,207,116,0.08)');   // Hijau = pemasukan
+
+  /* -- STEP 9: Judul sumbu Y -- */
+  ctx.save();
+  ctx.translate(14, pT + cH/2);
+  ctx.rotate(-Math.PI/2); // Putar 90 derajat untuk teks vertikal
+  ctx.fillStyle    = '#5a5870';
+  ctx.font         = '10px DM Sans, sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Jumlah (Rp)', 0, 0);
+  ctx.restore();
+}
+
+/* Singkat angka: 1500000 → "1,5jt" */
+function singkat(n) {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1e9) return sign+(abs/1e9).toFixed(1).replace('.0','')+'M';
+  if (abs >= 1e6) return sign+(abs/1e6).toFixed(1).replace('.0','')+'jt';
+  if (abs >= 1e3) return sign+(abs/1e3).toFixed(0)+'rb';
+  return sign+abs.toFixed(0);
+}
+
+/* ============================================================
+   TOAST & RENDER UTAMA
+============================================================ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function render() {
+  updateSummary();
+  renderList();
+  renderChart();
+  renderLineChart();
+  renderRecurring();
+}
+
+/* ============================================================
+   INIT — Dijalankan saat halaman pertama kali dibuka
+============================================================ */
+document.getElementById('date').valueAsDate = new Date();
+document.getElementById('rec-start').valueAsDate = new Date();
+updateCategories();
+document.getElementById('type').addEventListener('change', updateCategories);
+
+// Cek pemasukan rutin yang jatuh tempo
+cekRutin();
+
+// Render semua komponen
+render();
+
+// Gambar ulang grafik saat layar di-resize
+window.addEventListener('resize', renderLineChart);
+
+// Shortcut keyboard
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.activeElement.closest('.panel'))  addTransaction();
+  if (e.key==='Escape') closeFotoModal();
+});
+</script>
 </body>
 </html>
