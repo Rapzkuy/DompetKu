@@ -3,6 +3,11 @@
    Saat user mengetik di input Jumlah, angka diformat otomatis
    dengan titik ribuan. Nilai murni diambil via getRawAmount().
 ============================================================ */
+/* ============================================================
+   FITUR 1 — INPUT MASKING (FORMAT RUPIAH OTOMATIS)
+   Saat user mengetik di input Jumlah, angka diformat otomatis
+   dengan titik ribuan. Nilai murni diambil via getRawAmount().
+============================================================ */
 function setupInputMask(inputId) {
   const el = document.getElementById(inputId);
   if (!el) return;
@@ -788,6 +793,628 @@ render();
 // Gambar ulang grafik saat layar di-resize
 window.addEventListener('resize', renderLineChart);
 
+/* ================================================================
+   TAMBAHAN scriptDompet.js
+   Paste kode ini di PALING BAWAH file scriptDompet.js yang ada.
+   JANGAN ubah kode yang sudah ada di atas.
+================================================================ */
+
+
+/* ============================================================
+   FITUR 3 — SOUND EFFECTS
+   ============================================================
+   Gunakan Web Audio API (built-in browser, tanpa file eksternal).
+   Synthesizer sederhana yang membuat suara "kring" untuk
+   pemasukan dan suara "klik pendek" untuk pengeluaran.
+
+   AudioContext  → mesin audio browser
+   oscillator    → pembangkit gelombang suara
+   gainNode      → kontrol volume (fade out agar tidak klik keras)
+   frequency     → tinggi/rendahnya nada dalam Hz
+   type          → bentuk gelombang: sine, square, sawtooth, triangle
+============================================================ */
+function bunyiPemasukan() {
+  try {
+    // AudioContext: engine audio bawaan browser
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Nada 1 — "kring" tinggi
+    const osc1  = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.type      = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);           // Nada A5
+    osc1.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08); // Naik ke E6
+    gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.35);
+
+    // Nada 2 — "kring" kedua sedikit terlambat
+    const osc2  = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.type      = 'sine';
+    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    osc2.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.25);
+    gain2.gain.setValueAtTime(0.2, ctx.currentTime + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc2.start(ctx.currentTime + 0.1);
+    osc2.stop(ctx.currentTime + 0.5);
+  } catch(e) { /* Browser tidak support, abaikan */ }
+}
+
+function bunyiPengeluaran() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Suara "duh" — nada turun singkat
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.2); // Turun
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+  } catch(e) {}
+}
+
+/*
+   PATCH addTransaction — tambahkan panggilan sound effect.
+   Ganti fungsi addTransaction yang sudah ada dengan ini,
+   ATAU cukup tambahkan baris bunyiPemasukan()/bunyiPengeluaran()
+   di dalam fungsi addTransaction yang sudah ada setelah
+   baris: transactions.unshift({...})
+
+   Tambahkan setelah baris showToast di addTransaction:
+   -------------------------------------------------------
+   if (type === 'income') bunyiPemasukan();
+   else bunyiPengeluaran();
+   -------------------------------------------------------
+   NOTE: Cari baris showToast('✅ Transaksi berhasil...')
+   dan tambahkan 2 baris di atas persis setelahnya.
+*/
+
+
+/* ============================================================
+   FITUR 1 — KALENDER HEATMAP PENGELUARAN
+   ============================================================
+   Menampilkan kalender satu bulan sebagai CSS Grid 7×n.
+   Setiap sel diwarnai merah dengan intensitas berbeda
+   berdasarkan total pengeluaran di tanggal tersebut.
+
+   Logika intensitas (heat-1 s/d heat-5):
+   Dibagi berdasarkan persentase dari pengeluaran tertinggi
+   di bulan itu (relative scale).
+============================================================ */
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+
+function renderCalendar() {
+  const NAMA_HARI  = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+  const NAMA_BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
+                      'Juli','Agustus','September','Oktober','November','Desember'];
+
+  // Update label bulan
+  document.getElementById('cal-month-label').textContent =
+    NAMA_BULAN[calMonth] + ' ' + calYear;
+
+  // Render nama hari (header)
+  const dayNames = document.getElementById('cal-day-names');
+  dayNames.innerHTML = NAMA_HARI.map(h =>
+    `<div class="cal-day-name">${h}</div>`).join('');
+
+  // Hitung pengeluaran per tanggal di bulan ini
+  // expByDate: { "YYYY-MM-DD": totalPengeluaran }
+  const expByDate = {};
+  transactions.forEach(tx => {
+    if (tx.type !== 'expense') return;
+    const d = new Date(tx.date);
+    if (d.getMonth() !== calMonth || d.getFullYear() !== calYear) return;
+    const key = tx.date;
+    expByDate[key] = (expByDate[key] || 0) + tx.amount;
+  });
+
+  // Cari nilai maksimal untuk skala relatif
+  const maxExp = Math.max(...Object.values(expByDate), 1);
+
+  // Hari pertama bulan ini jatuh di hari apa?
+  // getDay(): 0=Min, 1=Sen, ..., 6=Sab → kita pakai Sen=0
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const offset   = (firstDay === 0) ? 6 : firstDay - 1; // Offset ke Senin
+
+  // Total hari dalam bulan
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const todayStr = toDateStr(new Date());
+  const cells    = document.getElementById('cal-cells');
+
+  let html = '';
+
+  // Sel kosong sebelum hari pertama
+  for (let i = 0; i < offset; i++) {
+    html += `<div class="cal-cell empty"></div>`;
+  }
+
+  // Sel untuk setiap tanggal
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const exp     = expByDate[dateStr] || 0;
+    const isToday = dateStr === todayStr;
+
+    // Tentukan kelas intensitas (heat-1 s/d heat-5)
+    let heatClass = '';
+    if (exp > 0) {
+      const ratio = exp / maxExp;
+      if      (ratio <= 0.2) heatClass = 'heat-1';
+      else if (ratio <= 0.4) heatClass = 'heat-2';
+      else if (ratio <= 0.6) heatClass = 'heat-3';
+      else if (ratio <= 0.8) heatClass = 'heat-4';
+      else                   heatClass = 'heat-5';
+    }
+
+    const tooltip = exp > 0
+      ? `<span class="cal-tooltip">📉 ${formatRupiah(exp)}</span>`
+      : '';
+
+    html += `<div class="cal-cell ${heatClass} ${isToday?'today':''}">
+      ${d}
+      ${tooltip}
+    </div>`;
+  }
+
+  cells.innerHTML = html;
+}
+
+function calPrev() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calNext() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+
+/* ============================================================
+   FITUR 2 — MANAJEMEN UTANG/PIUTANG (IOU)
+   ============================================================
+   Data disimpan di localStorage key: 'dompetku-iou'
+   Setiap item: { id, tipe, nama, amount, note, lunas, tanggal }
+   - tipe: 'hutang' (saya yang hutang) | 'piutang' (orang hutang ke saya)
+   - lunas: boolean
+============================================================ */
+let iouList    = JSON.parse(localStorage.getItem('dompetku-iou') || '[]');
+let iouTab     = 'hutang'; // Tab aktif
+let iouFormOpen = false;
+
+function simpanIou() { localStorage.setItem('dompetku-iou', JSON.stringify(iouList)); }
+
+function setIouTab(tab) {
+  iouTab = tab;
+  // Update tampilan tab
+  document.getElementById('iou-tab-hutang').className  = 'iou-tab' + (tab==='hutang'  ? ' active-hutang'  : '');
+  document.getElementById('iou-tab-piutang').className = 'iou-tab' + (tab==='piutang' ? ' active-piutang' : '');
+  document.getElementById('iou-toggle-btn').textContent =
+    tab === 'hutang' ? '＋ Catat Hutang Baru' : '＋ Catat Piutang Baru';
+  renderIou();
+}
+
+function toggleIouForm() {
+  iouFormOpen = !iouFormOpen;
+  document.getElementById('iou-form').style.display = iouFormOpen ? 'block' : 'none';
+}
+
+function addIou() {
+  const nama   = document.getElementById('iou-name').value.trim();
+  const amount = getRawAmount('iou-amount');
+  const note   = document.getElementById('iou-note').value.trim();
+  if (!nama || !amount || amount <= 0) { showToast('⚠️ Lengkapi nama dan nominal!'); return; }
+
+  iouList.push({
+    id:      Date.now(),
+    tipe:    iouTab,       // 'hutang' atau 'piutang'
+    nama,
+    amount,
+    note,
+    lunas:   false,
+    tanggal: toDateStr(new Date())
+  });
+
+  simpanIou(); renderIou();
+  document.getElementById('iou-name').value   = '';
+  document.getElementById('iou-amount').value = '';
+  document.getElementById('iou-note').value   = '';
+  iouFormOpen = false;
+  document.getElementById('iou-form').style.display = 'none';
+  showToast(iouTab === 'hutang' ? '💸 Hutang dicatat!' : '💰 Piutang dicatat!');
+}
+
+function lunasIou(id) {
+  const item = iouList.find(i => i.id === id);
+  if (!item) return;
+  item.lunas = !item.lunas;
+  simpanIou(); renderIou();
+  showToast(item.lunas ? '✅ Ditandai lunas!' : '↩️ Dibatalkan lunas.');
+}
+
+function deleteIou(id) {
+  iouList = iouList.filter(i => i.id !== id);
+  simpanIou(); renderIou();
+  showToast('🗑️ Catatan dihapus.');
+}
+
+function renderIou() {
+  const el      = document.getElementById('iou-list');
+  const filtered = iouList.filter(i => i.tipe === iouTab);
+
+  // Update ringkasan total
+  const totalHutang  = iouList.filter(i=>i.tipe==='hutang'  && !i.lunas).reduce((s,i)=>s+i.amount,0);
+  const totalPiutang = iouList.filter(i=>i.tipe==='piutang' && !i.lunas).reduce((s,i)=>s+i.amount,0);
+  const net          = totalPiutang - totalHutang;
+
+  document.getElementById('iou-total-hutang').textContent  = formatRupiah(totalHutang);
+  document.getElementById('iou-total-piutang').textContent = formatRupiah(totalPiutang);
+  const netEl = document.getElementById('iou-net');
+  netEl.textContent = formatRupiah(Math.abs(net));
+  netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-msg">${
+      iouTab==='hutang' ? 'Tidak ada hutang. Tetap hemat! 💪' : 'Tidak ada piutang tercatat. 👍'
+    }</div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map(item => `
+    <div class="iou-item ${item.lunas ? 'lunas' : ''}">
+      <div class="iou-icon">${item.tipe==='hutang' ? '💸' : '💰'}</div>
+      <div class="iou-info">
+        <div class="iou-name">${item.nama}${item.lunas ? ' <span style="font-size:.65rem;color:var(--green)">✓ Lunas</span>' : ''}</div>
+        <div class="iou-detail">${item.note || '—'} · ${formatDate(item.tanggal)}</div>
+      </div>
+      <div class="iou-amount ${item.tipe}">${formatRupiah(item.amount)}</div>
+      <div class="iou-actions">
+        <button class="iou-btn-lunas ${item.lunas?'done':''}"
+          onclick="lunasIou(${item.id})">
+          ${item.lunas ? '↩ Batal' : '✓ Lunas'}
+        </button>
+        <button class="iou-del" onclick="deleteIou(${item.id})">×</button>
+      </div>
+    </div>`).join('');
+}
+
+
+/* ============================================================
+   FITUR 4 — RAPOR KEUANGAN MINGGUAN
+   ============================================================
+   Membandingkan total pengeluaran 7 hari terakhir (minggu ini)
+   dengan 7 hari sebelumnya (minggu lalu).
+   Menampilkan ringkasan teks otomatis dengan persentase.
+
+   Rumus:
+   selisih = ((mingguIni - mingguLalu) / mingguLalu) * 100
+   Positif  = lebih boros, Negatif = lebih hemat
+============================================================ */
+function renderRapor() {
+  const container = document.getElementById('rapor-container');
+  if (!container) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Ambil total pengeluaran dalam rentang tanggal tertentu
+  function totalExpInRange(startOffset, endOffset) {
+    const start = new Date(today); start.setDate(today.getDate() - startOffset);
+    const end   = new Date(today); end.setDate(today.getDate() - endOffset);
+    return transactions
+      .filter(tx => {
+        if (tx.type !== 'expense') return false;
+        const d = new Date(tx.date); d.setHours(0,0,0,0);
+        return d >= end && d <= start;
+      })
+      .reduce((s, tx) => s + tx.amount, 0);
+  }
+
+  const mingguIni  = totalExpInRange(0, 6);   // 7 hari terakhir (hari ini sampai 6 hari lalu)
+  const mingguLalu = totalExpInRange(7, 13);  // 7 hari sebelumnya
+
+  // Jika belum ada data sama sekali, sembunyikan rapor
+  if (mingguIni === 0 && mingguLalu === 0) {
+    container.innerHTML = ''; return;
+  }
+
+  let icon, msg, detail, badgeClass, pctText;
+
+  if (mingguLalu === 0) {
+    // Belum ada data minggu lalu untuk dibandingkan
+    icon       = '📊';
+    msg        = `Minggu ini kamu mengeluarkan <strong>${formatRupiah(mingguIni)}</strong>`;
+    detail     = 'Belum ada data minggu lalu untuk dibandingkan.';
+    badgeClass = 'sama';
+    pctText    = 'Pertama!';
+  } else {
+    const pct = ((mingguIni - mingguLalu) / mingguLalu) * 100;
+
+    if (pct < -5) {
+      // Lebih hemat
+      icon       = '🎉';
+      msg        = `Minggu ini kamu <strong>${Math.abs(pct).toFixed(0)}% lebih hemat</strong> dari minggu lalu!`;
+      detail     = `Minggu ini: ${formatRupiah(mingguIni)} · Minggu lalu: ${formatRupiah(mingguLalu)}`;
+      badgeClass = 'hemat';
+      pctText    = `-${Math.abs(pct).toFixed(0)}%`;
+    } else if (pct > 5) {
+      // Lebih boros
+      icon       = '😬';
+      msg        = `Minggu ini pengeluaran <strong>${pct.toFixed(0)}% lebih boros</strong> dari minggu lalu.`;
+      detail     = `Minggu ini: ${formatRupiah(mingguIni)} · Minggu lalu: ${formatRupiah(mingguLalu)}`;
+      badgeClass = 'boros';
+      pctText    = `+${pct.toFixed(0)}%`;
+    } else {
+      // Hampir sama
+      icon       = '😐';
+      msg        = `Pengeluaran minggu ini <strong>hampir sama</strong> dengan minggu lalu.`;
+      detail     = `Minggu ini: ${formatRupiah(mingguIni)} · Minggu lalu: ${formatRupiah(mingguLalu)}`;
+      badgeClass = 'sama';
+      pctText    = `~${Math.abs(pct).toFixed(0)}%`;
+    }
+  }
+
+  container.innerHTML = `
+    <div class="rapor-card">
+      <div class="rapor-icon">${icon}</div>
+      <div class="rapor-text">
+        <div class="rapor-title">📋 Rapor Mingguan</div>
+        <div class="rapor-msg">${msg}</div>
+        <div class="rapor-detail">${detail}</div>
+      </div>
+      <div class="rapor-badge ${badgeClass}">${pctText}</div>
+    </div>`;
+}
+
+
+/* ============================================================
+   FITUR 5 — KALKULATOR MELAYANG
+   ============================================================
+   Kalkulator mini dengan state string ekspresi.
+   Tombol mengumpulkan karakter → tombol = mengevaluasi.
+
+   Simbol visual (÷ × −) dikonversi ke operator JS (/ * -)
+   sebelum dievaluasi dengan Function() agar aman.
+============================================================ */
+let calcExpr    = '';  // String ekspresi yang sedang dibangun
+let calcWidgetOpen = false;
+
+function toggleCalc() {
+  calcWidgetOpen = !calcWidgetOpen;
+  document.getElementById('calc-widget').style.display = calcWidgetOpen ? 'block' : 'none';
+}
+
+function calcInput(val) {
+  calcExpr += val;
+  document.getElementById('calc-expr').textContent = calcExpr;
+  // Preview hasil sementara jika ekspresi valid
+  try {
+    const preview = Function('"use strict"; return (' +
+      calcExpr.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-').replace(/%/g,'/100') +
+    ')')();
+    if (isFinite(preview))
+      document.getElementById('calc-result').textContent = singkat(preview);
+  } catch(e) {}
+}
+
+function calcEqual() {
+  try {
+    // Evaluasi ekspresi — ganti simbol visual ke operator JS
+    const jsExpr = calcExpr
+      .replace(/÷/g, '/')
+      .replace(/×/g, '*')
+      .replace(/−/g, '-')
+      .replace(/%/g, '/100');
+    // Function() lebih aman dari eval() — hanya eksekusi ekspresi matematika
+    const result = Function('"use strict"; return (' + jsExpr + ')')();
+    if (!isFinite(result)) throw new Error('Invalid');
+    document.getElementById('calc-result').textContent =
+      new Intl.NumberFormat('id-ID').format(parseFloat(result.toFixed(10)));
+    document.getElementById('calc-expr').textContent  = calcExpr + ' =';
+    calcExpr = String(result); // Simpan hasil sebagai input berikutnya
+  } catch(e) {
+    document.getElementById('calc-result').textContent = 'Error';
+    calcExpr = '';
+  }
+}
+
+function calcClear() {
+  calcExpr = '';
+  document.getElementById('calc-expr').textContent   = '';
+  document.getElementById('calc-result').textContent = '0';
+}
+
+function calcDel() {
+  // Hapus karakter terakhir dari ekspresi
+  calcExpr = calcExpr.slice(0, -1);
+  document.getElementById('calc-expr').textContent = calcExpr;
+  if (!calcExpr) document.getElementById('calc-result').textContent = '0';
+}
+
+// Tutup kalkulator jika klik di luar widget
+document.addEventListener('click', e => {
+  const widget = document.getElementById('calc-widget');
+  const fab    = document.getElementById('calc-fab');
+  if (calcWidgetOpen && !widget.contains(e.target) && !fab.contains(e.target)) {
+    calcWidgetOpen = false;
+    widget.style.display = 'none';
+  }
+});
+
+
+/* ============================================================
+   FITUR 6 — WISHLIST DENGAN HITUNG MUNDUR
+   ============================================================
+   Data: { id, name, price, daily, tanggal }
+   Estimasi hari = (harga - saldo_sekarang) / nabung_harian
+   Jika saldo >= harga → tampilkan "Bisa dibeli sekarang!"
+   Progress bar = saldo / harga (max 100%)
+============================================================ */
+let wishList     = JSON.parse(localStorage.getItem('dompetku-wishlist') || '[]');
+let wishFormOpen = false;
+
+function simpanWish() { localStorage.setItem('dompetku-wishlist', JSON.stringify(wishList)); }
+
+function toggleWishForm() {
+  wishFormOpen = !wishFormOpen;
+  document.getElementById('wish-form').style.display = wishFormOpen ? 'block' : 'none';
+  document.getElementById('wish-toggle-btn').textContent =
+    wishFormOpen ? '× Tutup' : '＋ Tambah Wishlist';
+}
+
+function addWish() {
+  const name  = document.getElementById('wish-name').value.trim();
+  const price = getRawAmount('wish-price');
+  const daily = getRawAmount('wish-daily');
+  if (!name || !price || price <= 0) { showToast('⚠️ Lengkapi nama dan harga!'); return; }
+
+  wishList.push({ id:Date.now(), name, price, daily: daily || 0 });
+  simpanWish(); renderWish();
+  document.getElementById('wish-name').value  = '';
+  document.getElementById('wish-price').value = '';
+  document.getElementById('wish-daily').value = '';
+  wishFormOpen = false;
+  document.getElementById('wish-form').style.display = 'none';
+  document.getElementById('wish-toggle-btn').textContent = '＋ Tambah Wishlist';
+  showToast('✨ Wishlist ditambahkan!');
+}
+
+function deleteWish(id) {
+  wishList = wishList.filter(w => w.id !== id);
+  simpanWish(); renderWish();
+  showToast('🗑️ Wishlist dihapus.');
+}
+
+function renderWish() {
+  const el    = document.getElementById('wish-list');
+  const empty = document.getElementById('wish-empty');
+
+  if (!wishList.length) {
+    el.innerHTML = ''; el.appendChild(empty); empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+
+  // Ambil saldo saat ini
+  const saldo = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0)
+              - transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+
+  el.innerHTML = wishList.map(w => {
+    const pct    = Math.min(100, Math.max(0, saldo / w.price * 100));
+    const kurang = Math.max(0, w.price - saldo);
+    const done   = saldo >= w.price;
+
+    // Hitung mundur hari
+    let countdown = '';
+    if (done) {
+      countdown = `<div class="wish-countdown done">🎉 Bisa dibeli sekarang!</div>`;
+    } else if (w.daily > 0) {
+      const hari = Math.ceil(kurang / w.daily);
+      // Estimasi tanggal target
+      const target = new Date();
+      target.setDate(target.getDate() + hari);
+      const tglTarget = target.toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'});
+      countdown = `<div class="wish-countdown">
+        ⏳ Estimasi <strong>${hari} hari lagi</strong> · Sekitar ${tglTarget}
+      </div>`;
+    } else {
+      countdown = `<div class="wish-countdown" style="color:var(--muted)">
+        Isi "Nabung/hari" untuk lihat estimasi ⬆
+      </div>`;
+    }
+
+    return `<div class="wish-card">
+      <div class="wish-header">
+        <div class="wish-name">✨ ${w.name}</div>
+        <button class="wish-del" onclick="deleteWish(${w.id})">×</button>
+      </div>
+      <div class="wish-meta">
+        Target: <strong>${formatRupiah(w.price)}</strong>
+        ${w.daily ? ` · Nabung/hari: ${formatRupiah(w.daily)}` : ''}
+        · Kurang: <strong style="color:var(--red)">${formatRupiah(kurang)}</strong>
+      </div>
+      <div class="wish-track"><div class="wish-bar" style="width:${pct}%"></div></div>
+      <div style="font-size:.7rem;color:var(--muted);text-align:right;margin-bottom:6px">${pct.toFixed(1)}%</div>
+      ${countdown}
+    </div>`;
+  }).join('');
+}
+
+
+/* ============================================================
+   HOOK — Sambungkan semua fitur baru ke render() yang ada
+   ============================================================
+   Tambahkan baris-baris ini ke bagian INIT di bagian paling
+   bawah scriptDompet.js (setelah baris render(); yang ada).
+
+   CARA: Cari baris:
+     window.addEventListener('resize', renderLineChart);
+   Tambahkan SETELAH baris itu:
+   -------------------------------------------------------
+   renderCalendar();
+   renderIou();
+   renderRapor();
+   renderWish();
+   setupInputMask('iou-amount');
+   setupInputMask('wish-price');
+   setupInputMask('wish-daily');
+   -------------------------------------------------------
+
+   Dan di fungsi render() yang sudah ada, tambahkan:
+   -------------------------------------------------------
+   renderCalendar();
+   renderRapor();
+   renderWish();
+   -------------------------------------------------------
+*/
+
+/* Tambahan otomatis — panggil langsung di sini juga sebagai fallback */
+document.addEventListener('DOMContentLoaded', () => {
+  // Setup input mask untuk field baru
+  setupInputMask('iou-amount');
+  setupInputMask('wish-price');
+  setupInputMask('wish-daily');
+
+  // Render komponen baru
+  renderCalendar();
+  renderIou();
+  renderRapor();
+  renderWish();
+
+  // Inisialisasi tab IOU default
+  setIouTab('hutang');
+});
+
+/*
+   PENTING: Tambahkan juga di dalam fungsi render() yang sudah ada
+   (cari "function render() {" di scriptDompet.js):
+
+   function render() {
+     updateSummary();
+     renderList();
+     renderChart();
+     renderLineChart();
+     renderRecurring();
+     renderExpRecurring();
+     renderGoals();
+     renderCalendar();   ← TAMBAHKAN INI
+     renderRapor();      ← TAMBAHKAN INI
+     renderWish();       ← TAMBAHKAN INI
+   }
+
+   Dan di addTransaction() setelah showToast('✅ Transaksi berhasil...'):
+   if (type === 'income') bunyiPemasukan();   ← TAMBAHKAN
+   else bunyiPengeluaran();                   ← TAMBAHKAN
+*/
 // Shortcut keyboard
 document.addEventListener('keydown', e => {
   if (e.key==='Enter' && document.activeElement.closest('.panel'))  addTransaction();
