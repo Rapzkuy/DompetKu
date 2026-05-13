@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
@@ -21,14 +21,19 @@
       --radius:    14px;
     }
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 60px;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 80px;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes popIn{from{opacity:0;transform:scale(.93) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
     .container{max-width:820px;margin:0 auto;animation:fadeUp .5s ease both;}
+
+    /* HEADER */
     header{text-align:center;margin-bottom:36px;padding-top:20px;}
     header::before{content:'';display:block;width:50px;height:3px;background:var(--gold);margin:0 auto 18px;border-radius:2px;}
     header h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,6vw,3rem);color:var(--gold-lite);letter-spacing:-.5px;}
     header p{color:var(--muted);margin-top:6px;font-size:.9rem;}
-    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+
+    /* SUMMARY */
+    .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
     .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;text-align:center;position:relative;overflow:hidden;transition:transform .2s;}
     .summary-card:hover{transform:translateY(-3px);}
     .summary-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
@@ -38,9 +43,227 @@
     .summary-card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;}
     .summary-card .amount{font-family:'Playfair Display',serif;font-size:clamp(1.1rem,3vw,1.5rem);font-weight:700;}
     .amount.green{color:var(--green);}.amount.red{color:var(--red);}.amount.gold{color:var(--gold-lite);}
+
+    /* ============================================================
+       MULTI-WALLET — Saldo per Lokasi
+    ============================================================ */
+    .wallet-section{margin-bottom:24px;}
+    .wallet-section-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:12px;
+    }
+    .wallet-section-title{
+      font-family:'Playfair Display',serif;
+      font-size:.92rem;color:var(--gold-lite);
+    }
+    /* Tombol "+ Tambah Lokasi" — styled seperti chip kecil */
+    .wallet-add-btn{
+      display:inline-flex;align-items:center;gap:5px;
+      background:rgba(201,168,76,.12);
+      border:1px solid rgba(201,168,76,.35);
+      color:var(--gold);
+      border-radius:20px;
+      padding:5px 14px;
+      font-size:.78rem;
+      font-family:'DM Sans',sans-serif;
+      font-weight:600;
+      cursor:pointer;
+      transition:all .2s;
+      white-space:nowrap;
+    }
+    .wallet-add-btn:hover{background:rgba(201,168,76,.22);transform:translateY(-1px);}
+
+    /* Baris kartu — horizontal scroll di HP */
+    .wallet-cards{
+      display:flex;gap:12px;
+      overflow-x:auto;padding-bottom:4px;
+      scrollbar-width:none;
+    }
+    .wallet-cards::-webkit-scrollbar{display:none;}
+
+    /* Kartu wallet individual */
+    .wallet-card{
+      min-width:150px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px 14px 14px;
+      flex-shrink:0;
+      position:relative;
+      overflow:hidden;
+      transition:transform .2s,border-color .2s,box-shadow .2s;
+    }
+    .wallet-card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 6px 20px rgba(0,0,0,.3);
+    }
+    /* Garis warna di atas tiap kartu */
+    .wallet-card-bar{
+      position:absolute;top:0;left:0;right:0;height:3px;
+      border-radius:12px 12px 0 0;
+    }
+    .wallet-card .wc-label{
+      font-size:.62rem;text-transform:uppercase;
+      letter-spacing:1.5px;color:var(--muted);
+      margin-bottom:5px;margin-top:2px;
+    }
+    .wallet-card .wc-name{
+      font-size:.9rem;font-weight:600;
+      margin-bottom:10px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      padding-right:18px;
+    }
+    .wallet-card .wc-amount{
+      font-family:'Playfair Display',serif;
+      font-size:1.05rem;font-weight:700;
+    }
+    /* Tombol hapus — muncul saat hover */
+    .wallet-card .wc-del{
+      position:absolute;top:8px;right:8px;
+      background:none;border:none;
+      color:var(--muted);cursor:pointer;
+      font-size:.85rem;padding:2px 6px;
+      border-radius:4px;
+      opacity:0;
+      transition:opacity .2s,color .2s,background .2s;
+    }
+    .wallet-card:hover .wc-del{opacity:1;}
+    .wallet-card .wc-del:hover{color:var(--red);background:rgba(241,96,96,.12);}
+
+    /* ============================================================
+       MODAL — Base style (dipakai wallet & quickbtn)
+    ============================================================ */
+    .modal-base{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.78);
+      backdrop-filter:blur(5px);
+      -webkit-backdrop-filter:blur(5px);
+      z-index:3000;
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;
+      transition:opacity .22s;
+    }
+    .modal-base.open{opacity:1;pointer-events:all;}
+    .modal-base-box{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:28px 26px;
+      width:min(360px,92vw);
+      box-shadow:0 24px 60px rgba(0,0,0,.55);
+      animation:popIn .22s ease both;
+    }
+    .modal-base-title{
+      font-family:'Playfair Display',serif;
+      font-size:1.15rem;color:var(--gold-lite);
+      margin-bottom:20px;
+    }
+    /* Tombol aksi di dalam modal */
+    .modal-btns{display:flex;gap:10px;margin-top:16px;}
+    .modal-btns .btn{margin-top:0;flex:1;}
+
+    /* Pilihan warna (color dots) */
+    .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+    .color-dot{
+      width:26px;height:26px;border-radius:50%;
+      cursor:pointer;
+      border:2.5px solid transparent;
+      transition:transform .15s,border-color .15s,box-shadow .15s;
+    }
+    .color-dot:hover{transform:scale(1.18);}
+    .color-dot.selected{
+      border-color:#fff;
+      transform:scale(1.18);
+      box-shadow:0 0 0 1px rgba(255,255,255,.3);
+    }
+
+    /* ============================================================
+       QUICK BUTTONS — Tombol Cepat
+    ============================================================ */
+    .quick-section{margin-bottom:16px;}
+    .quick-section-top{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:8px;
+    }
+    .quick-label{
+      font-size:.7rem;text-transform:uppercase;
+      letter-spacing:1px;color:var(--muted);
+    }
+    /* Label toggle mode edit */
+    .quick-edit-label{
+      display:inline-flex;align-items:center;gap:5px;
+      font-size:.72rem;color:var(--muted);
+      cursor:pointer;
+      user-select:none;
+      padding:3px 8px;
+      border-radius:6px;
+      border:1px solid var(--border);
+      background:var(--surface2);
+      transition:all .2s;
+    }
+    .quick-edit-label:hover{border-color:var(--gold);color:var(--gold);}
+    .quick-edit-label input[type=checkbox]{
+      accent-color:var(--gold);
+      width:12px;height:12px;
+      cursor:pointer;
+    }
+    /* Baris tombol-tombol cepat */
+    .quick-btn-row{
+      display:flex;gap:7px;flex-wrap:wrap;
+      align-items:center;
+    }
+    /* Tiap tombol cepat */
+    .qbtn{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:6px 12px;
+      border-radius:20px;
+      border:1px solid var(--border);
+      background:var(--surface2);
+      color:var(--text);
+      font-size:.78rem;
+      font-family:'DM Sans',sans-serif;
+      font-weight:500;
+      cursor:pointer;
+      transition:all .2s;
+      white-space:nowrap;
+      line-height:1;
+    }
+    .qbtn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.3);}
+    .qbtn.q-income{border-color:rgba(62,207,116,.45);color:var(--green);}
+    .qbtn.q-income:hover{background:rgba(62,207,116,.12);}
+    .qbtn.q-expense{border-color:rgba(241,96,96,.45);color:var(--red);}
+    .qbtn.q-expense:hover{background:rgba(241,96,96,.12);}
+    /* Tombol × hapus di dalam qbtn (mode edit) */
+    .qbtn-del-x{
+      background:none;border:none;
+      color:inherit;cursor:pointer;
+      font-size:.72rem;padding:0 0 0 2px;
+      opacity:.55;line-height:1;
+      transition:opacity .15s;
+    }
+    .qbtn-del-x:hover{opacity:1;}
+    /* Tombol "+ Buat Tombol" */
+    .qbtn-add{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:6px 12px;
+      border-radius:20px;
+      border:1.5px dashed var(--border);
+      background:transparent;
+      color:var(--muted);
+      font-size:.78rem;
+      font-family:'DM Sans',sans-serif;
+      cursor:pointer;
+      transition:all .2s;
+      white-space:nowrap;
+    }
+    .qbtn-add:hover{border-color:var(--gold);color:var(--gold);}
+
+    /* TWO COL */
     .two-col{display:grid;grid-template-columns:1fr 1.4fr;gap:20px;align-items:start;}
     .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
     .panel-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold-lite);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+
+    /* FORM */
     .form-group{margin-bottom:16px;}
     .form-group label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:7px;}
     .form-group input,.form-group select{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
@@ -52,6 +275,8 @@
     .btn-primary:hover{background:var(--gold-lite);transform:translateY(-1px);}
     .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;}
     .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+
+    /* TRANSACTION LIST */
     #transaction-list{display:flex;flex-direction:column;gap:10px;}
     .tx-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);animation:fadeUp .3s ease both;}
     .tx-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
@@ -66,9 +291,14 @@
     .tx-del:hover{color:var(--red);background:rgba(241,96,96,.1);}
     .empty-msg{text-align:center;color:var(--muted);font-size:.85rem;padding:30px 0;}
     .badge-recurring{font-size:.6rem;background:rgba(91,156,246,.2);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+    .badge-wallet{font-size:.6rem;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;font-weight:600;}
+
+    /* FILTER */
     .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
     .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
     .filter-btn.active{background:var(--gold);border-color:var(--gold);color:#111;font-weight:600;}
+
+    /* GRAFIK BATANG */
     .chart-section{margin-top:20px;}
     .chart-bar-wrap{display:flex;flex-direction:column;gap:10px;}
     .chart-row{display:flex;align-items:center;gap:10px;font-size:.78rem;}
@@ -77,6 +307,8 @@
     .chart-fill{height:100%;border-radius:5px;transition:width .6s ease;}
     .chart-fill.income{background:var(--green);}.chart-fill.expense{background:var(--red);}
     .chart-val{width:70px;text-align:right;font-weight:500;}
+
+    /* GRAFIK GARIS */
     .line-chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
     .line-chart-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:4px;}
     .chart-title-text{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold-lite);}
@@ -89,6 +321,8 @@
     .canvas-wrap{position:relative;width:100%;}
     #lineChart{display:block;width:100%;}
     .chart-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:40px 0;}
+
+    /* RECURRING */
     .recurring-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
     .recurring-list{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
     .rec-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
@@ -105,19 +339,27 @@
     .rec-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .rec-form-grid .form-group{margin-bottom:0;}
     .rec-form .btn{margin-top:12px;}
+
+    /* UPLOAD */
     .upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;min-height:70px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;}
     .upload-area:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
     .upload-area.dragover{border-color:var(--gold);background:rgba(201,168,76,.1);}
     #foto-clear{background:rgba(241,96,96,.15);border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:6px;}
     .tx-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;border:1px solid var(--border);transition:transform .2s,border-color .2s;flex-shrink:0;}
     .tx-thumb:hover{transform:scale(1.1);border-color:var(--gold);}
+
+    /* MODAL FOTO */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
     .modal-overlay.open{opacity:1;pointer-events:all;}
     .modal-overlay img{max-width:90vw;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);object-fit:contain;}
     .modal-close{position:absolute;top:20px;right:24px;background:none;border:none;color:white;font-size:2rem;cursor:pointer;line-height:1;opacity:.7;transition:opacity .2s;}
     .modal-close:hover{opacity:1;}
+
+    /* TOAST */
     .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--gold);color:var(--text);padding:12px 22px;border-radius:30px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:1000;white-space:nowrap;}
     .toast.show{opacity:1;}
+
+    /* SEARCH */
     .search-filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
     .search-filter-row input{flex:1;min-width:120px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;transition:border-color .2s;}
     .search-filter-row input:focus{border-color:var(--gold);}
@@ -125,6 +367,8 @@
     .search-filter-row select{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer;}
     .export-btn{background:rgba(62,207,116,.12);border:1px solid rgba(62,207,116,.3);color:var(--green);border-radius:8px;padding:5px 12px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .2s;white-space:nowrap;}
     .export-btn:hover{background:rgba(62,207,116,.22);border-color:var(--green);}
+
+    /* GOAL */
     .goal-section{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}
     .goal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;}
     .goal-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);}
@@ -141,7 +385,7 @@
     .goal-form-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
     .goal-form-panel .panel-title{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 
-    /* FITUR BARU — KALENDER HEATMAP */
+    /* KALENDER */
     .calendar-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
     .calendar-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
     .cal-nav{display:flex;align-items:center;gap:10px;}
@@ -164,7 +408,7 @@
     .cal-legend{display:flex;align-items:center;gap:4px;margin-top:10px;font-size:.7rem;color:var(--muted);justify-content:flex-end;}
     .cal-legend-box{width:14px;height:14px;border-radius:3px;}
 
-    /* FITUR BARU — IOU */
+    /* IOU */
     .iou-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
     .iou-tabs{display:flex;gap:8px;margin-bottom:16px;}
     .iou-tab{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;text-align:center;font-weight:600;transition:all .2s;}
@@ -193,7 +437,7 @@
     .iou-summary-card .label{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
     .iou-summary-card .val{font-weight:700;font-size:.95rem;}
 
-    /* FITUR BARU — RAPOR */
+    /* RAPOR */
     .rapor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
     .rapor-icon{font-size:2rem;flex-shrink:0;}
     .rapor-text{flex:1;min-width:180px;}
@@ -205,7 +449,7 @@
     .rapor-badge.boros{background:rgba(241,96,96,.15);color:var(--red);border:1px solid rgba(241,96,96,.3);}
     .rapor-badge.sama{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);}
 
-    /* FITUR BARU — KALKULATOR MELAYANG */
+    /* KALKULATOR */
     #calc-fab{position:fixed;bottom:28px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--gold);color:#111;font-size:1.4rem;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:1500;transition:transform .2s,background .2s;display:flex;align-items:center;justify-content:center;}
     #calc-fab:hover{background:var(--gold-lite);transform:scale(1.1);}
     #calc-widget{position:fixed;bottom:90px;right:24px;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:1499;overflow:hidden;display:none;animation:fadeUp .2s ease;}
@@ -221,10 +465,10 @@
     .calc-btn.clr{color:var(--red);}
     .calc-btn.wide{grid-column:span 2;}
 
-    /* FITUR BARU — WISHLIST */
+    /* WISHLIST */
     .wishlist-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:20px;}
     .wish-list{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;}
-    .wish-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;}
+    .wish-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
     .wish-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
     .wish-name{font-weight:600;font-size:.9rem;}
     .wish-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 4px;transition:color .2s;}
@@ -258,9 +502,10 @@
     <p>Catat, pantau, dan kelola keuanganmu dengan bijak</p>
   </header>
 
+  <!-- SUMMARY CARDS -->
   <div class="summary-grid">
     <div class="summary-card balance">
-      <div class="label">💼 Saldo</div>
+      <div class="label">💼 Total Saldo</div>
       <div class="amount gold" id="total-balance">Rp 0</div>
     </div>
     <div class="summary-card income">
@@ -271,6 +516,15 @@
       <div class="label">📉 Pengeluaran</div>
       <div class="amount red" id="total-expense">Rp 0</div>
     </div>
+  </div>
+
+  <!-- MULTI-WALLET: Saldo per Lokasi -->
+  <div class="wallet-section">
+    <div class="wallet-section-header">
+      <div class="wallet-section-title">📍 Saldo per Lokasi</div>
+      <button class="wallet-add-btn" onclick="openWalletModal()">＋ Tambah Lokasi</button>
+    </div>
+    <div class="wallet-cards" id="wallet-cards"></div>
   </div>
 
   <!-- RAPOR MINGGUAN -->
@@ -298,6 +552,21 @@
   <div class="two-col">
     <div class="panel">
       <div class="panel-title">＋ Tambah Transaksi</div>
+
+      <!-- TOMBOL CEPAT -->
+      <div class="quick-section">
+        <div class="quick-section-top">
+          <div class="quick-label">⚡ Tombol Cepat</div>
+          <label class="quick-edit-label">
+            <input type="checkbox" id="qbtn-edit-chk" onchange="toggleQbtnEdit()"/>
+            Mode Edit
+          </label>
+        </div>
+        <div class="quick-btn-row" id="quick-btn-row">
+          <button class="qbtn-add" onclick="openQbtnModal()">＋ Buat Tombol</button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="type">Tipe</label>
         <select id="type">
@@ -316,6 +585,11 @@
       <div class="form-group">
         <label for="category">Kategori</label>
         <select id="category"></select>
+      </div>
+      <!-- Dropdown lokasi wallet -->
+      <div class="form-group">
+        <label for="wallet-select">Lokasi Uang</label>
+        <select id="wallet-select"></select>
       </div>
       <div class="form-group">
         <label for="date">Tanggal</label>
@@ -385,7 +659,7 @@
   </div>
 
   <!-- KALENDER HEATMAP -->
-  <div class="calendar-panel" id="calendar-panel">
+  <div class="calendar-panel">
     <div class="calendar-header-row">
       <div class="chart-title-text">📅 Kalender Pengeluaran</div>
       <div class="cal-nav">
@@ -407,22 +681,13 @@
     </div>
   </div>
 
-  <!-- IOU UTANG/PIUTANG -->
+  <!-- IOU -->
   <div class="iou-panel">
     <div class="panel-title">🤝 Utang &amp; Piutang</div>
     <div class="iou-summary">
-      <div class="iou-summary-card">
-        <div class="label">💸 Total Hutang</div>
-        <div class="val" id="iou-total-hutang" style="color:var(--red)">Rp 0</div>
-      </div>
-      <div class="iou-summary-card">
-        <div class="label">💰 Total Piutang</div>
-        <div class="val" id="iou-total-piutang" style="color:var(--green)">Rp 0</div>
-      </div>
-      <div class="iou-summary-card">
-        <div class="label">⚖️ Posisi Bersih</div>
-        <div class="val" id="iou-net">Rp 0</div>
-      </div>
+      <div class="iou-summary-card"><div class="label">💸 Total Hutang</div><div class="val" id="iou-total-hutang" style="color:var(--red)">Rp 0</div></div>
+      <div class="iou-summary-card"><div class="label">💰 Total Piutang</div><div class="val" id="iou-total-piutang" style="color:var(--green)">Rp 0</div></div>
+      <div class="iou-summary-card"><div class="label">⚖️ Posisi Bersih</div><div class="val" id="iou-net">Rp 0</div></div>
     </div>
     <div class="iou-tabs">
       <button class="iou-tab active-hutang" id="iou-tab-hutang" onclick="setIouTab('hutang')">💸 Hutang Saya</button>
@@ -432,14 +697,8 @@
     <button class="btn btn-outline" id="iou-toggle-btn" onclick="toggleIouForm()">＋ Tambah Catatan</button>
     <div class="iou-form" id="iou-form">
       <div class="iou-form-row">
-        <div class="form-group">
-          <label>Nama</label>
-          <input type="text" id="iou-name" placeholder="Nama orang"/>
-        </div>
-        <div class="form-group">
-          <label>Nominal (Rp)</label>
-          <input type="text" id="iou-amount" placeholder="0" inputmode="numeric"/>
-        </div>
+        <div class="form-group"><label>Nama</label><input type="text" id="iou-name" placeholder="Nama orang"/></div>
+        <div class="form-group"><label>Nominal (Rp)</label><input type="text" id="iou-amount" placeholder="0" inputmode="numeric"/></div>
       </div>
       <div class="form-group" style="margin-bottom:12px">
         <label>Catatan (opsional)</label>
@@ -452,23 +711,14 @@
   <!-- PEMASUKAN RUTIN -->
   <div class="recurring-panel">
     <div class="panel-title">🔁 Pemasukan Rutin <span style="font-size:.75rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">(opsional)</span></div>
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.5">Daftarkan pemasukan rutin (gaji, uang saku, dll) agar otomatis masuk ke saldo.</p>
-    <div class="recurring-list" id="recurring-list">
-      <div class="empty-msg" id="rec-empty">Belum ada pemasukan rutin. Tambahkan di bawah! 🔁</div>
-    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.5">Daftarkan pemasukan rutin agar otomatis masuk ke saldo.</p>
+    <div class="recurring-list" id="recurring-list"><div class="empty-msg" id="rec-empty">Belum ada pemasukan rutin. 🔁</div></div>
     <button class="btn btn-outline" onclick="toggleRecForm()" id="rec-toggle-btn">＋ Tambah Pemasukan Rutin</button>
     <div class="rec-form" id="rec-form" style="display:none">
       <div class="rec-form-grid">
         <div class="form-group"><label>Nama</label><input type="text" id="rec-name" placeholder="Contoh: Gaji"/></div>
         <div class="form-group"><label>Jumlah (Rp)</label><input type="number" id="rec-amount" placeholder="0" min="1"/></div>
-        <div class="form-group">
-          <label>Frekuensi</label>
-          <select id="rec-freq">
-            <option value="weekly">📅 Setiap Minggu</option>
-            <option value="monthly" selected>📅 Setiap Bulan</option>
-            <option value="yearly">📅 Setiap Tahun</option>
-          </select>
-        </div>
+        <div class="form-group"><label>Frekuensi</label><select id="rec-freq"><option value="weekly">📅 Setiap Minggu</option><option value="monthly" selected>📅 Setiap Bulan</option><option value="yearly">📅 Setiap Tahun</option></select></div>
         <div class="form-group"><label>Mulai Tanggal</label><input type="date" id="rec-start"/></div>
       </div>
       <button class="btn btn-primary" onclick="addRecurring()">Simpan Pemasukan Rutin</button>
@@ -478,23 +728,14 @@
   <!-- PENGELUARAN RUTIN -->
   <div class="recurring-panel" style="margin-top:20px">
     <div class="panel-title">🔴 Pengeluaran Rutin <span style="font-size:.75rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">(opsional)</span></div>
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.5">Daftarkan tagihan rutin (sewa, langganan, cicilan, dll) agar otomatis dicatat.</p>
-    <div class="recurring-list" id="exp-recurring-list">
-      <div class="empty-msg" id="exp-rec-empty">Belum ada pengeluaran rutin. Tambahkan di bawah! 🔴</div>
-    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.5">Daftarkan tagihan rutin agar otomatis dicatat sebagai pengeluaran.</p>
+    <div class="recurring-list" id="exp-recurring-list"><div class="empty-msg" id="exp-rec-empty">Belum ada pengeluaran rutin. 🔴</div></div>
     <button class="btn btn-outline" onclick="toggleExpRecForm()" id="exp-rec-toggle-btn">＋ Tambah Pengeluaran Rutin</button>
     <div class="rec-form" id="exp-rec-form" style="display:none">
       <div class="rec-form-grid">
         <div class="form-group"><label>Nama</label><input type="text" id="exp-rec-name" placeholder="Contoh: Netflix"/></div>
         <div class="form-group"><label>Jumlah (Rp)</label><input type="number" id="exp-rec-amount" placeholder="0" min="1"/></div>
-        <div class="form-group">
-          <label>Frekuensi</label>
-          <select id="exp-rec-freq">
-            <option value="weekly">📅 Setiap Minggu</option>
-            <option value="monthly" selected>📅 Setiap Bulan</option>
-            <option value="yearly">📅 Setiap Tahun</option>
-          </select>
-        </div>
+        <div class="form-group"><label>Frekuensi</label><select id="exp-rec-freq"><option value="weekly">📅 Setiap Minggu</option><option value="monthly" selected>📅 Setiap Bulan</option><option value="yearly">📅 Setiap Tahun</option></select></div>
         <div class="form-group"><label>Mulai Tanggal</label><input type="date" id="exp-rec-start"/></div>
       </div>
       <button class="btn btn-primary" onclick="addExpRecurring()">Simpan Pengeluaran Rutin</button>
@@ -504,10 +745,8 @@
   <!-- WISHLIST -->
   <div class="wishlist-panel">
     <div class="panel-title">✨ Wishlist &amp; Hitung Mundur</div>
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5">Catat barang impian dan rencana nabung harian — lihat estimasi berapa hari lagi bisa kebeli!</p>
-    <div class="wish-list" id="wish-list">
-      <div class="empty-msg" id="wish-empty">Belum ada wishlist. Tambahkan impianmu! ✨</div>
-    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.5">Catat barang impian dan lihat estimasi berapa hari lagi bisa kebeli!</p>
+    <div class="wish-list" id="wish-list"><div class="empty-msg" id="wish-empty">Belum ada wishlist. ✨</div></div>
     <button class="btn btn-outline" id="wish-toggle-btn" onclick="toggleWishForm()">＋ Tambah Wishlist</button>
     <div class="wish-form" id="wish-form">
       <div class="wish-form-grid">
@@ -521,10 +760,62 @@
 
 </div><!-- /container -->
 
+<!-- MODAL FOTO -->
 <div class="modal-overlay" id="foto-modal" onclick="closeFotoModal()">
   <button class="modal-close" onclick="closeFotoModal()">×</button>
   <img id="modal-img" src="" alt="Bukti"/>
 </div>
+
+<!-- MODAL TAMBAH WALLET — fixed overlay, muncul di tengah layar -->
+<div class="modal-base" id="wallet-modal">
+  <div class="modal-base-box">
+    <div class="modal-base-title">📍 Tambah Lokasi Uang</div>
+    <div class="form-group">
+      <label>Nama Lokasi</label>
+      <input type="text" id="wm-name" placeholder="Contoh: Dompet, BCA, Celengan"/>
+    </div>
+    <div class="form-group">
+      <label>Ikon Emoji</label>
+      <input type="text" id="wm-emoji" placeholder="💵" maxlength="2"
+             style="font-size:1.3rem;text-align:center;letter-spacing:4px"/>
+    </div>
+    <div class="form-group">
+      <label>Warna Kartu</label>
+      <div class="color-row" id="wm-color-row"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveWallet()">Simpan</button>
+      <button class="btn btn-outline" onclick="closeWalletModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH QUICK BUTTON — fixed overlay, muncul di tengah layar -->
+<div class="modal-base" id="qbtn-modal">
+  <div class="modal-base-box">
+    <div class="modal-base-title">⚡ Buat Tombol Cepat</div>
+    <div class="form-group">
+      <label>Label Tombol</label>
+      <input type="text" id="qm-label" placeholder="Contoh: Jajan, Bensin"/>
+    </div>
+    <div class="form-group">
+      <label>Nominal (Rp)</label>
+      <input type="text" id="qm-amount" placeholder="0" inputmode="numeric"/>
+    </div>
+    <div class="form-group">
+      <label>Tipe Transaksi</label>
+      <select id="qm-type">
+        <option value="expense">📉 Pengeluaran</option>
+        <option value="income">📈 Pemasukan</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveQbtn()">Simpan</button>
+      <button class="btn btn-outline" onclick="closeQbtnModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- KALKULATOR MELAYANG -->
